@@ -47,29 +47,34 @@ async function getStatus(token: string, uuid: string): Promise<Status> {
       issuesBySeverity: restRes.result!.issuesBySeverity,
     };
 
-    switch (restRes.statusCode) {
-      case 200: {
-        return Promise.resolve(status);
-      }
-      case 401: {
-        core.setFailed("Failed to log in with provided credentials");
-        break;
-      }
-      case 403: {
-        core.setFailed(
-          "The account doesn't have any permissions for a resource"
-        );
-        break;
+    if (restRes.statusCode < 300) {
+      return status;
+    } else {
+      core.setFailed(`Failed get scan info. Status code: ${restRes.statusCode}`);
+    }
+  } catch (err: any) {
+    if ('statusCode' in err) {
+      switch (err.statusCode) {
+        case 401: {
+          core.setFailed("Failed to log in with provided credentials");
+          break;
+        }
+        case 403: {
+          core.setFailed(
+            "The account doesn't have any permissions for a resource"
+          );
+          break;
+        }
+        default: {
+          core.setFailed("Failed to log in with provided credentials");
+        }
       }
     }
-  } catch (err) {
     console.debug("Timeout reached");
   }
 
   return Promise.reject();
 }
-
-waitFor(scanId);
 
 async function waitFor(uuid: string) {
   poll
@@ -79,7 +84,7 @@ async function waitFor(uuid: string) {
           const status = await getStatus(apiToken, uuid);
           const stop = issueFound(waitFor_, status.issuesBySeverity);
           const state = status.status;
-          const url = `https://nexploit.app/scans/${uuid}`;
+          const url = `${baseUrl}/scans/${uuid}`;
 
           if (stop == true) {
             core.setFailed(`Issues were found. See on ${url}`);
@@ -132,3 +137,5 @@ function issueFound(severity: Severity, issues: IssuesBySeverity[]): boolean {
 
   return false;
 }
+
+waitFor(scanId).catch(err => console.log(err));
