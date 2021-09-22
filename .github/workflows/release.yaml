@@ -6,15 +6,15 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    container: node:14
+    container: node:16
     name: Build GitHub Action
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Install rsync 📚
       run: |
         apt-get update && apt-get install -y rsync
     - name: Install dependencies
-      run: npm install && npm install -g typescript && npm install -g @zeit/ncc
+      run: npm ci && npm install -g @vercel/ncc
     - name: Build release
       run: npm run build && npm run pack
     - name: Copy files to release
@@ -23,9 +23,30 @@ jobs:
         cp README.md release/
         cp action.yml release/
         cp -R dist/ release/dist/
-    - name: Push changes to the branch
-      uses: JamesIves/github-pages-deploy-action@releases/v3
+    - name: Start Nexploit Scan 🏁
+      id: scan
+      uses: NeuraLegion/run-scan@release
       with:
-        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        BRANCH: release
-        FOLDER: release
+        api_token: ${{ secrets.NEXPLOIT_TOKEN }}
+        name: GitHub scan ${{ github.sha }}
+        discovery_types: |
+          [ "crawler" ]
+        module: "dast"
+        crawler_urls: |
+          [ "https://brokencrystals.com" ]
+        hosts_filter: |
+          [ ]
+    - name: Wait for any issues ⏳
+      id: wait
+      uses: ./release
+      with:
+        api_token: ${{ secrets.NEXPLOIT_TOKEN }}
+        scan: ${{ steps.scan.outputs.id }}
+        wait_for: any
+        timeout: 55
+    - name: Push changes to the branch
+      uses: JamesIves/github-pages-deploy-action@4.1.5
+      with:
+        token: ${{ secrets.ACCESS_TOKEN }}
+        branch: release
+        folder: release

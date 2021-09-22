@@ -35,41 +35,23 @@ function printDescriptionForIssues(issues: IssuesBySeverity[]) {
   }
 }
 
-async function getStatus(token: string, uuid: string): Promise<Status> {
+async function getStatus(token: string, uuid: string): Promise<Status | never> {
   try {
     let options = { additionalHeaders: { Authorization: `Api-Key ${token}` } };
     let restRes: rm.IRestResponse<Status> = await restc.get<Status>(
       `api/v1/scans/${uuid}`,
       options
     );
-    const status: Status = {
+    return {
       status: restRes.result!.status,
       issuesBySeverity: restRes.result!.issuesBySeverity,
     };
-
-    switch (restRes.statusCode) {
-      case 200: {
-        return Promise.resolve(status);
-      }
-      case 401: {
-        core.setFailed("Failed to log in with provided credentials");
-        break;
-      }
-      case 403: {
-        core.setFailed(
-          "The account doesn't have any permissions for a resource"
-        );
-        break;
-      }
-    }
-  } catch (err) {
-    console.debug("Timeout reached");
+  } catch (err: any) {
+    const message = `Failed (${err.statusCode}) ${err.message}`;
+    core.setFailed(message);
+    throw new Error(message);
   }
-
-  return Promise.reject();
 }
-
-waitFor(scanId);
 
 async function waitFor(uuid: string) {
   poll
@@ -79,16 +61,16 @@ async function waitFor(uuid: string) {
           const status = await getStatus(apiToken, uuid);
           const stop = issueFound(waitFor_, status.issuesBySeverity);
           const state = status.status;
-          const url = `https://nexploit.app/scans/${uuid}`;
+          const url = `${baseUrl} /scans/${uuid} `;
 
           if (stop == true) {
-            core.setFailed(`Issues were found. See on ${url}`);
+            core.setFailed(`Issues were found.See on ${url} `);
             printDescriptionForIssues(status.issuesBySeverity);
             return Promise.resolve({
               done: true,
             });
           } else if (state == "failed") {
-            core.setFailed(`Scan failed. See on ${url}`);
+            core.setFailed(`Scan failed.See on ${url} `);
             return Promise.resolve({
               done: true,
             });
@@ -109,7 +91,7 @@ async function waitFor(uuid: string) {
       timeout
     )
     .catch(function (e) {
-      core.info("===== Timeout ====");
+      core.info(e);
     });
 }
 
@@ -132,3 +114,5 @@ function issueFound(severity: Severity, issues: IssuesBySeverity[]): boolean {
 
   return false;
 }
+
+waitFor(scanId).catch(err => console.log(err));
