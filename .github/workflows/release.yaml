@@ -5,11 +5,14 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
-    container: node:16
     name: Build GitHub Action
+    runs-on: ubuntu-latest
+    container:
+      image: node:16
+      env:
+        NODE_ENV: production
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2.3.1
     - name: Install rsync 📚
       run: |
         apt-get update && apt-get install -y rsync
@@ -23,6 +26,9 @@ jobs:
         cp README.md release/
         cp action.yml release/
         cp -R dist/ release/dist/
+    - run: |
+        pwd;
+        ls -lah;
     - name: Start Nexploit Scan 🏁
       id: scan
       uses: NeuraLegion/run-scan@release
