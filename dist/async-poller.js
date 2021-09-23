@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.asyncPoll = void 0;
 /**
  * How to repeatedly call an async function until get a desired result.
  *
