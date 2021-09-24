@@ -15,6 +15,7 @@ const timeout = 1000 * Number(core.getInput('timeout'));
 
 const baseUrl = hostname ? `https://$hostname` : 'https://nexploit.app';
 const restc: rm.RestClient = new rm.RestClient('GitHub Actions', baseUrl);
+const options = { additionalHeaders: { Authorization: `Api-Key ${apiToken}` } };
 
 interface Status {
   status: string;
@@ -34,15 +35,13 @@ function printDescriptionForIssues(issues: IssuesBySeverity[]) {
   }
 }
 
-async function getStatus(token: string, uuid: string): Promise<Status | never> {
+async function getStatus(uuid: string): Promise<Status | never> {
   try {
-    const options = { additionalHeaders: { Authorization: `Api-Key ${token}` } };
-    const restRes: rm.IRestResponse<Status> = await restc.get<Status>(`api/v1/scans/${uuid}`, options);
-    console.log(restRes);
+    const restRes = await restc.get<Status>(`api/v1/scans/${uuid}`, options);
 
     return {
-      status: restRes.result!.status,
-      issuesBySeverity: restRes.result!.issuesBySeverity,
+      status: restRes.result ? restRes.result.status : '',
+      issuesBySeverity: restRes.result ? restRes.result.issuesBySeverity : [],
     };
   } catch (err: any) {
     const message = `Failed (${err.statusCode}) ${err.message}`;
@@ -54,7 +53,7 @@ async function getStatus(token: string, uuid: string): Promise<Status | never> {
 function run(uuid: string) {
   asyncPoll(
     async (): Promise<AsyncData<any>> => {
-      const status = await getStatus(apiToken, uuid);
+      const status = await getStatus(uuid);
       const stop = issueFound(waitFor, status.issuesBySeverity);
       const state = status.status;
       const url = `${baseUrl}/scans/${uuid} `;
@@ -66,6 +65,8 @@ function run(uuid: string) {
       if (stop === true) {
         core.setFailed(`Issues were found.See on ${url} `);
         printDescriptionForIssues(status.issuesBySeverity);
+        const restRes = await restc.get<Status>(`api/v1/scans/${uuid}/reports/sarif`, options);
+        console.log(restRes);
         return result;
       } else if (state === 'failed') {
         core.setFailed(`Scan failed.See on ${url} `);
