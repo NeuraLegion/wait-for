@@ -10,44 +10,46 @@ jobs:
       isMaster: ${{ github.ref == 'refs/heads/master' }}
       isDev: ${{ github.ref != 'refs/heads/master' }}
     steps:
-    - name: Install rsync 📚
-      run: apt-get update && apt-get install -y rsync git
-    - uses: actions/checkout@v2.3.1
-    - name: Install dependencies
-      run: npm ci && npm install -g @vercel/ncc
-    - name: Build release
-      run: npm run lint && npm run build && npm run pack
-    - name: Copy files to release
-      run: |
-        mkdir release
-        cp README.md release/
-        cp action.yml release/
-        cp -R dist/ release/dist/
-    - name: Start Nexploit Scan 🏁
-      id: scan
-      uses: NeuraLegion/run-scan@release
-      with:
-        api_token: ${{ secrets.NEXPLOIT_TOKEN }}
-        name: GitHub scan ${{ github.sha }}
-        discovery_types: |
-          [ "crawler" ]
-        module: "dast"
-        crawler_urls: |
-          [ "https://brokencrystals.com" ]
-        hosts_filter: |
-          [ ]
-    - name: Wait for any issues ⏳
-      id: wait
-      uses: ./release
-      with:
-        api_token: ${{ secrets.NEXPLOIT_TOKEN }}
-        scan: ${{ steps.scan.outputs.id }}
-        wait_for: any
-        timeout: 360 # in general cases we'll have a timeout and it is good for this test
-    - name: Push changes to the branch
-      if: ${{ github.ref == 'refs/heads/master' }}
-      uses: JamesIves/github-pages-deploy-action@4.1.5
-      with:
-        token: ${{ secrets.PA_TOKEN }}
-        branch: release
-        folder: release
+      - name: Install rsync 📚
+        run: apt-get update && apt-get install -y rsync git
+      - uses: actions/checkout@v2.3.1
+      - name: Install dependencies
+        run: npm ci && npm install -g @vercel/ncc
+      - name: Build release
+        run: npm run lint && npm run build && npm run pack
+      - name: Copy files to release
+        run: |
+          mkdir release
+          cp README.md release/
+          cp action.yml release/
+          cp -R dist/ release/dist/
+      - name: Start Nexploit Scan 🏁
+        id: scan
+        uses: NeuraLegion/run-scan@release
+        with:
+          api_token: ${{ secrets.NEXPLOIT_TOKEN }}
+          name: GitHub scan ${{ github.sha }}
+          discovery_types: |
+            [ "crawler" ]
+          module: "dast"
+          crawler_urls: |
+            [ "https://brokencrystals.com" ]
+          hosts_filter: |
+            [ ]
+          hostname: https://3b69-195-138-93-59.ngrok.io
+      - name: Wait for any issues ⏳
+        id: wait
+        uses: ./release
+        with:
+          api_token: ${{ secrets.NEXPLOIT_TOKEN }}
+          scan: ${{ steps.scan.outputs.id }}
+          wait_for: any
+          timeout: 360 # in general cases we'll have a timeout and it is good for this test
+          hostname: https://3b69-195-138-93-59.ngrok.io
+      - name: Push changes to the branch
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: JamesIves/github-pages-deploy-action@4.1.5
+        with:
+          token: ${{ secrets.PA_TOKEN }}
+          branch: release
+          folder: release
