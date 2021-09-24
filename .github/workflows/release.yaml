@@ -42,7 +42,6 @@ jobs:
           scan: ${{ steps.scan.outputs.id }}
           wait_for: any
           timeout: 360 # in general cases we'll have a timeout and it is good for this test
-          hostname: "3b69-195-138-93-59.ngrok.io"
       - name: Push changes to the branch
         if: ${{ github.ref == 'refs/heads/master' }}
         uses: JamesIves/github-pages-deploy-action@4.1.5
