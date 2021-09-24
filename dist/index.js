@@ -148,21 +148,20 @@ const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
 const baseUrl = hostname ? `https://$hostname` : 'https://nexploit.app';
 const restc = new rm.RestClient('GitHub Actions', baseUrl);
+const options = { additionalHeaders: { Authorization: `Api-Key ${apiToken}` } };
 function printDescriptionForIssues(issues) {
     core.info('Issues were found:');
     for (const issue of issues) {
         core.info(`${issue.number} ${issue.type} issues`);
     }
 }
-function getStatus(token, uuid) {
+function getStatus(uuid) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const options = { additionalHeaders: { Authorization: `Api-Key ${token}` } };
             const restRes = yield restc.get(`api/v1/scans/${uuid}`, options);
-            console.log(restRes);
             return {
-                status: restRes.result.status,
-                issuesBySeverity: restRes.result.issuesBySeverity,
+                status: restRes.result ? restRes.result.status : '',
+                issuesBySeverity: restRes.result ? restRes.result.issuesBySeverity : [],
             };
         }
         catch (err) {
@@ -174,7 +173,7 @@ function getStatus(token, uuid) {
 }
 function run(uuid) {
     (0, async_poller_1.asyncPoll)(() => __awaiter(this, void 0, void 0, function* () {
-        const status = yield getStatus(apiToken, uuid);
+        const status = yield getStatus(uuid);
         const stop = issueFound(waitFor, status.issuesBySeverity);
         const state = status.status;
         const url = `${baseUrl}/scans/${uuid} `;
@@ -185,6 +184,8 @@ function run(uuid) {
         if (stop === true) {
             core.setFailed(`Issues were found.See on ${url} `);
             printDescriptionForIssues(status.issuesBySeverity);
+            const restRes = yield restc.get(`api/v1/scans/${uuid}/reports/sarif`, options);
+            console.log(restRes);
             return result;
         }
         else if (state === 'failed') {
