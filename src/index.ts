@@ -65,8 +65,6 @@ function run(uuid: string) {
       if (stop === true) {
         core.setFailed(`Issues were found.See on ${url} `);
         printDescriptionForIssues(status.issuesBySeverity);
-        const restRes = await restc.get<Status>(`api/v1/scans/${uuid}/reports/sarif`, options);
-        console.log(restRes);
         return result;
       } else if (state === 'failed') {
         core.setFailed(`Scan failed.See on ${url} `);
