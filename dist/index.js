@@ -79,19 +79,19 @@ pollTimeout = 30 * 1000) {
         const endTime = new Date().getTime() + pollTimeout;
         const checkCondition = (resolve, reject) => {
             Promise.resolve(fn())
-                .then((result) => {
+                .then(result => {
                 const now = new Date().getTime();
-                if (result.done) {
+                if (result.done && result.data) {
                     resolve(result.data);
                 }
                 else if (now < endTime) {
                     setTimeout(checkCondition, pollInterval, resolve, reject);
                 }
                 else {
-                    reject(new Error("AsyncPoller: reached timeout"));
+                    reject(new Error('AsyncPoller: reached timeout'));
                 }
             })
-                .catch((err) => {
+                .catch(err => {
                 reject(err);
             });
         };
@@ -139,27 +139,26 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(964));
 const rm = __importStar(__nccwpck_require__(235));
-const poll = __importStar(__nccwpck_require__(134));
-const apiToken = core.getInput("api_token");
-const scanId = core.getInput("scan");
-const hostname = core.getInput("hostname");
-const waitFor__ = core.getInput("wait_for");
-const waitFor_ = waitFor__;
+const async_poller_1 = __nccwpck_require__(134);
+const apiToken = core.getInput('api_token');
+const scanId = core.getInput('scan');
+const hostname = core.getInput('hostname');
+const waitFor = core.getInput('wait_for');
 const interval = 20000;
-const timeout = 1000 * Number(core.getInput("timeout"));
-const baseUrl = hostname ? `https://$hostname` : "https://nexploit.app";
-let restc = new rm.RestClient("GitHub Actions", baseUrl);
+const timeout = 1000 * Number(core.getInput('timeout'));
+const baseUrl = hostname ? `https://$hostname` : 'https://nexploit.app';
+const restc = new rm.RestClient('GitHub Actions', baseUrl);
 function printDescriptionForIssues(issues) {
-    core.info("Issues were found:");
-    for (let issue of issues) {
+    core.info('Issues were found:');
+    for (const issue of issues) {
         core.info(`${issue.number} ${issue.type} issues`);
     }
 }
 function getStatus(token, uuid) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            let options = { additionalHeaders: { Authorization: `Api-Key ${token}` } };
-            let restRes = yield restc.get(`api/v1/scans/${uuid}`, options);
+            const options = { additionalHeaders: { Authorization: `Api-Key ${token}` } };
+            const restRes = yield restc.get(`api/v1/scans/${uuid}`, options);
             return {
                 status: restRes.result.status,
                 issuesBySeverity: restRes.result.issuesBySeverity,
@@ -172,67 +171,53 @@ function getStatus(token, uuid) {
         }
     });
 }
-function waitFor(uuid) {
-    return __awaiter(this, void 0, void 0, function* () {
-        poll
-            .asyncPoll(() => __awaiter(this, void 0, void 0, function* () {
-            try {
-                const status = yield getStatus(apiToken, uuid);
-                const stop = issueFound(waitFor_, status.issuesBySeverity);
-                const state = status.status;
-                const url = `${baseUrl}/scans/${uuid} `;
-                if (stop == true) {
-                    core.setFailed(`Issues were found.See on ${url} `);
-                    printDescriptionForIssues(status.issuesBySeverity);
-                    return Promise.resolve({
-                        done: true,
-                    });
-                }
-                else if (state == "failed") {
-                    core.setFailed(`Scan failed.See on ${url} `);
-                    return Promise.resolve({
-                        done: true,
-                    });
-                }
-                else if (state == "stopped") {
-                    return Promise.resolve({
-                        done: true,
-                    });
-                }
-                else {
-                    return Promise.resolve({
-                        done: false,
-                    });
-                }
-            }
-            catch (err) {
-                return Promise.reject(err);
-            }
-        }), interval, timeout)
-            .catch(function (e) {
-            core.info(e);
-        });
-    });
+function run(uuid) {
+    (0, async_poller_1.asyncPoll)(() => __awaiter(this, void 0, void 0, function* () {
+        const status = yield getStatus(apiToken, uuid);
+        const stop = issueFound(waitFor, status.issuesBySeverity);
+        const state = status.status;
+        const url = `${baseUrl}/scans/${uuid} `;
+        const result = {
+            done: true,
+            data: state,
+        };
+        if (stop === true) {
+            core.setFailed(`Issues were found.See on ${url} `);
+            printDescriptionForIssues(status.issuesBySeverity);
+            return result;
+        }
+        else if (state === 'failed') {
+            core.setFailed(`Scan failed.See on ${url} `);
+            return result;
+        }
+        else if (state === 'stopped') {
+            return result;
+        }
+        else {
+            result.done = false;
+            return result;
+        }
+    }), interval, timeout).catch(e => core.info(e));
 }
 function issueFound(severity, issues) {
-    var types;
-    if (severity == "any") {
-        types = ["Low", "Medium", "High"];
+    let types;
+    if (severity === 'any') {
+        types = ['Low', 'Medium', 'High'];
     }
-    else if (severity == "medium") {
-        types = ["Medium", "High"];
+    else if (severity === 'medium') {
+        types = ['Medium', 'High'];
     }
     else {
-        types = ["High"];
+        types = ['High'];
     }
-    for (let issue of issues) {
+    for (const issue of issues) {
         if (issue.number > 0 && types.includes(issue.type)) {
             return true;
         }
     }
     return false;
 }
-waitFor(scanId).catch(err => console.log(err));
+run(scanId);
 
 
 /***/ }),

@@ -72,19 +72,19 @@ pollTimeout = 30 * 1000) {
         const endTime = new Date().getTime() + pollTimeout;
         const checkCondition = (resolve, reject) => {
             Promise.resolve(fn())
-                .then((result) => {
+                .then(result => {
                 const now = new Date().getTime();
-                if (result.done) {
+                if (result.done && result.data) {
                     resolve(result.data);
                 }
                 else if (now < endTime) {
                     setTimeout(checkCondition, pollInterval, resolve, reject);
                 }
                 else {
-                    reject(new Error("AsyncPoller: reached timeout"));
+                    reject(new Error('AsyncPoller: reached timeout'));
                 }
             })
-                .catch((err) => {
+                .catch(err => {
                 reject(err);
             });
         };
