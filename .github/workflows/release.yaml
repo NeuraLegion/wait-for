@@ -4,7 +4,8 @@ on:
       - /\b(?!\bmaster\b)\w+\b/gi
 
 jobs:
-  release:
+  build:
+    if: ${{ github.ref == 'refs/heads/main' }}
     name: Build GitHub Action
     runs-on: ubuntu-latest
     container: node:16
