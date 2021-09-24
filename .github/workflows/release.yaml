@@ -1,7 +1,5 @@
-on:
-  push:
-    branches:
-      - /\b(?!\bmaster\b)\w+\b/gi
+name: CI
+on: push
 
 jobs:
   build:
