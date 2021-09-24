@@ -61,7 +61,7 @@ async function waitFor(uuid: string) {
           const status = await getStatus(apiToken, uuid);
           const stop = issueFound(waitFor_, status.issuesBySeverity);
           const state = status.status;
-          const url = `${baseUrl} /scans/${uuid} `;
+          const url = `${baseUrl}/scans/${uuid} `;
 
           if (stop == true) {
             core.setFailed(`Issues were found.See on ${url} `);
