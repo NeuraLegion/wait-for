@@ -38,6 +38,8 @@ async function getStatus(token: string, uuid: string): Promise<Status | never> {
   try {
     const options = { additionalHeaders: { Authorization: `Api-Key ${token}` } };
     const restRes: rm.IRestResponse<Status> = await restc.get<Status>(`api/v1/scans/${uuid}`, options);
+    console.log(restRes);
+
     return {
       status: restRes.result!.status,
       issuesBySeverity: restRes.result!.issuesBySeverity,
