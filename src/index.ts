@@ -13,7 +13,7 @@ const waitFor = core.getInput('wait_for') as Severity;
 const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
 
-const baseUrl = hostname ? `https://$hostname` : 'https://nexploit.app';
+const baseUrl = hostname ? `https://${hostname}` : 'https://nexploit.app';
 const restc: rm.RestClient = new rm.RestClient('GitHub Actions', baseUrl);
 const options = { additionalHeaders: { Authorization: `Api-Key ${apiToken}` } };
 
