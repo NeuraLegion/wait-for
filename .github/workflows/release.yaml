@@ -45,7 +45,7 @@ jobs:
         wait_for: any
         timeout: 60 # in general cases we'll have a timeout and it is good for this test
     - name: Push changes to the branch
-      if: ${{ isMaster }}
+      if: ${{ env.isMaster }}
       uses: JamesIves/github-pages-deploy-action@4.1.5
       with:
         token: ${{ secrets.PA_TOKEN }}
