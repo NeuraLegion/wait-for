@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - !master
+      - /\b(?!\bmaster\b)\w+\b/gi
 
 jobs:
   release:
