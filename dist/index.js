@@ -159,6 +159,7 @@ function getStatus(token, uuid) {
         try {
             const options = { additionalHeaders: { Authorization: `Api-Key ${token}` } };
             const restRes = yield restc.get(`api/v1/scans/${uuid}`, options);
+            console.log(restRes);
             return {
                 status: restRes.result.status,
                 issuesBySeverity: restRes.result.issuesBySeverity,
