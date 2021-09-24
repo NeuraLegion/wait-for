@@ -3,10 +3,12 @@ on: push
 
 jobs:
   build:
-    if: ${{ github.ref == 'refs/heads/master' }}
     name: Build GitHub Action
     runs-on: ubuntu-latest
     container: node:16
+    env:
+      isMaster: ${{ github.ref == 'refs/heads/master' }}
+      isDev: ${{ github.ref != 'refs/heads/master' }}
     steps:
     - name: Install rsync 📚
       run: apt-get update && apt-get install -y rsync git
@@ -43,6 +45,7 @@ jobs:
         wait_for: any
         timeout: 60 # in general cases we'll have a timeout and it is good for this test
     - name: Push changes to the branch
+      if: ${{ isMaster }}
       uses: JamesIves/github-pages-deploy-action@4.1.5
       with:
         token: ${{ secrets.PA_TOKEN }}
