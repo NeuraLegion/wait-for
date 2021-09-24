@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/master' }}
     name: Build GitHub Action
     runs-on: ubuntu-latest
     container: node:16
