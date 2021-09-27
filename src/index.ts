@@ -1,6 +1,6 @@
+import { asyncPoll, AsyncData } from './async-poller';
 import * as core from '@actions/core';
 import * as rm from 'typed-rest-client/RestClient';
-import { asyncPoll, AsyncData } from './async-poller';
 
 type Severity = 'any' | 'medium' | 'high';
 
@@ -62,17 +62,20 @@ function run(uuid: string) {
         data: state,
       };
 
-      if (stop === true) {
+      if (stop) {
         core.setFailed(`Issues were found.See on ${url} `);
         printDescriptionForIssues(status.issuesBySeverity);
+
         return result;
       } else if (state === 'failed') {
         core.setFailed(`Scan failed.See on ${url} `);
+
         return result;
       } else if (state === 'stopped') {
         return result;
       } else {
         result.done = false;
+
         return result;
       }
     },

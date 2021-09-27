@@ -33,7 +33,6 @@ jobs:
             [ "https://brokencrystals.com" ]
           hosts_filter: |
             [ ]
-          hostname: "3b69-195-138-93-59.ngrok.io"
       - name: Wait for any issues ⏳
         id: wait
         uses: ./release

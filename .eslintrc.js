@@ -1,241 +1,241 @@
 module.exports = {
   root: true,
   env: {
-    'node': true,
-    'es2020': true,
+    es6: true,
+    node: true
   },
-  plugins: [
-    '@typescript-eslint',
-    'prettier',
-    'import',
-  ],
   extends: [
-    'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'prettier',
-    'plugin:import/errors',
-    'plugin:import/warnings',
+    'eslint:recommended',
     'plugin:import/typescript',
-    "plugin:prettier/recommended",
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/eslint-recommended'
+  ],
+  ignorePatterns: [
+    '**/test{,s}',
+    '**/*.spec.ts'
   ],
   settings: {
-    'import/resolver': {
-      node: {
-        paths: ['.']
-      }
-    },
     'import/parsers': {
-      '@typescript-eslint/parser': ['.ts', '.tsx']
+      '@typescript-eslint/parser': ['.ts']
+    },
+    'import/resolver': {
+      typescript: {}
     }
   },
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    'project': 'tsconfig.json',
-    'tsconfigRootDir': '.',
-    'ecmaVersion': 2020,
-    'sourceType': 'module',
+    project: ['tsconfig.json'],
+    tsconfigRootDir: __dirname
   },
-  overrides: [
-    {
-      'files': ['**/*.spec.ts', '**/*.test.ts'],
-      'env': {
-        'jest': true,
-      },
-      'plugins': ['jest'],
-    }
-  ],
-  reportUnusedDisableDirectives: true,
+  plugins: ['@typescript-eslint', 'import'],
   rules: {
-    // Prettier
-    'prettier/prettier': [
+    '@typescript-eslint/explicit-member-accessibility': [
       'error',
       {
-        'tabWidth': 2,
-        'useTabs': false,
-        'semi': true,
-        'singleQuote': true,
-        'trailingComma': 'es5',
-        'arrowParens': 'avoid',
-        'bracketSpacing': true,
-        'printWidth': 180,
-        'parser': 'typescript'
-      },
-      {
-        'usePrettierrc': false
-      }
-    ],
-    // TypeScript rules
-    '@typescript-eslint/no-unsafe-assignment': 'off',
-    '@typescript-eslint/no-unsafe-return': 'off',
-    '@typescript-eslint/no-unsafe-call': 'off',
-    '@typescript-eslint/no-unsafe-member-access': 'off',
-    '@typescript-eslint/restrict-template-expressions': 'off',
-    '@typescript-eslint/interface-name-prefix': 'off',
-    '@typescript-eslint/no-misused-promises': 'off',
-    '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'error',
-    '@typescript-eslint/consistent-type-assertions': [
-      'error',
-      {
-        'assertionStyle': 'as',
-        'objectLiteralTypeAssertions': 'allow'
-      }
-    ],
-    '@typescript-eslint/prefer-namespace-keyword': 'error',
-    // Inherited from ESLint
-    'require-await': 'off',
-    '@typescript-eslint/require-await': 'error',
-    'no-return-await': 'off',
-    '@typescript-eslint/return-await': 'error',
-    'semi': 'off',
-    '@typescript-eslint/semi': [
-      'error',
-      'always',
-      {
-        'omitLastInOneLineBlock': true,
-      }
-    ],
-    '@typescript-eslint/member-delimiter-style': [
-      'error',
-      {
-        'multiline': {
-          'delimiter': 'semi',
-          'requireLast': true
-        },
-        'singleline': {
-          'delimiter': 'semi',
-          'requireLast': false
+        accessibility: 'explicit',
+        overrides: {
+          accessors: 'no-public',
+          constructors: 'no-public'
         }
       }
     ],
-    'no-unused-vars': 'off',
-    '@typescript-eslint/no-unused-vars': [
+    '@typescript-eslint/consistent-indexed-object-style': ['error', 'record'],
+    '@typescript-eslint/member-ordering': [
       'error',
       {
-        'varsIgnorePattern': '^_',
-        'argsIgnorePattern': '^_',
-        'caughtErrorsIgnorePattern': '^_',
-        'args': 'after-used',
-        'ignoreRestSiblings': true,
-        'caughtErrors': 'all',
+        default: [
+          'public-static-field',
+          'protected-static-field',
+          'private-static-field',
+          'public-instance-field',
+          'protected-instance-field',
+          'private-instance-field',
+          'constructor',
+          'public-static-method',
+          'protected-static-method',
+          'private-static-method',
+          'public-abstract-method',
+          'protected-abstract-method',
+          'private-abstract-method',
+          'public-instance-method',
+          'protected-instance-method',
+          'private-instance-method'
+        ]
       }
     ],
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
     '@typescript-eslint/naming-convention': [
       'error',
       {
-        'selector': 'default',
-        'format': [
-          'camelCase',
-          'PascalCase',
-          'snake_case'
-        ],
-        'leadingUnderscore': 'allow'
+        selector: 'default',
+        format: ['camelCase'],
+        leadingUnderscore: 'forbid',
+        trailingUnderscore: 'forbid'
       },
       {
-        'selector': 'variable',
-        'format': [
-          'camelCase',
-          'UPPER_CASE',
-          'PascalCase'
-        ],
-        'leadingUnderscore': 'allow'
-      },
-      // {
-      //   'selector': 'variable',
-      //   'filter': {
-      //     'regex': '_',
-      //     'match': true
-      //   },
-      //   'format': null,
-      //   'leadingUnderscore': 'allow'
-      // },
-      {
-        'selector': 'memberLike',
-        'modifiers': [
-          'private'
-        ],
-        'format': [
-          'camelCase',
-          'UPPER_CASE'
-        ],
-        'leadingUnderscore': 'allow'
+        selector: 'enumMember',
+        format: ['UPPER_CASE']
       },
       {
-        'selector': 'typeLike',
-        'format': [
-          'PascalCase',
-          'snake_case'
-        ],
-        'leadingUnderscore': 'allow'
+        selector: 'typeLike',
+        format: ['PascalCase']
+      },
+      {
+        selector: 'function',
+        format: ['PascalCase', 'camelCase']
+      },
+      {
+        selector: 'variable',
+        format: ['camelCase', 'UPPER_CASE', 'PascalCase', 'snake_case']
+      },
+      {
+        selector: 'method',
+        format: ['camelCase', 'PascalCase'],
+        modifiers: ['static']
+      },
+      {
+        selector: 'property',
+        format: ['camelCase', 'UPPER_CASE', 'PascalCase', 'snake_case'],
+        leadingUnderscore: 'allow'
+      },
+      // https://github.com/typescript-eslint/typescript-eslint/issues/1510#issuecomment-580593245
+      {
+        selector: 'parameter',
+        format: ['camelCase'],
+        leadingUnderscore: 'allow'
       }
     ],
-    'no-unused-expressions': 'off',
-    '@typescript-eslint/no-unused-expressions': [
+    '@typescript-eslint/no-inferrable-types': [
       'error',
       {
-        'allowTernary': true
+        ignoreParameters: true,
+        ignoreProperties: true
       }
     ],
-    'indent': 'off',
-    '@typescript-eslint/indent': [
-      'error',
-      2,
-      {
-        'ArrayExpression': 1,
-        'CallExpression': {
-          'arguments': 1
-        },
-        'FunctionDeclaration': {
-          'body': 1,
-          'parameters': 1
-        },
-        'FunctionExpression': {
-          'body': 1,
-          'parameters': 1
-        },
-        'ImportDeclaration': 1,
-        'MemberExpression': 1,
-        'ObjectExpression': 1,
-        'SwitchCase': 1,
-        'flatTernaryExpressions': true,
-        'outerIIFEBody': 1
-      }
-    ],
-    'brace-style': 'off',
-    '@typescript-eslint/brace-style': [
-      'error',
-      '1tbs'
-    ],
-    'comma-dangle': 'off',
-    '@typescript-eslint/comma-dangle': [
+    '@typescript-eslint/default-param-last': ['error'],
+    '@typescript-eslint/consistent-type-assertions': 'error',
+    '@typescript-eslint/no-duplicate-imports': 'error',
+    '@typescript-eslint/no-non-null-assertion': 'error',
+    '@typescript-eslint/unified-signatures': 'error',
+    '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
+    '@typescript-eslint/no-parameter-properties': 'off',
+    '@typescript-eslint/typedef': [
       'error',
       {
-        'arrays': 'only-multiline',
-        'objects': 'only-multiline',
-        'imports': 'only-multiline',
-        'exports': 'only-multiline',
-        'enums':  'only-multiline',
-        'functions': 'never'
+        arrayDestructuring: true,
+        arrowParameter: false,
+        memberVariableDeclaration: false,
+        variableDeclarationIgnoreFunction: true
       }
     ],
-    // ESLint rules
-    'spaced-comment': 'error',
-    'max-len': [
+    '@typescript-eslint/no-shadow': [
       'error',
-      180
+      {
+        hoist: 'all'
+      }
     ],
+    'arrow-body-style': 'error',
+    'camelcase': 'off',
+    'complexity': [
+      'error',
+      {
+        max: 10
+      }
+    ],
+    'eqeqeq': ['error', 'smart'],
+    'guard-for-in': 'error',
+    'import/no-self-import': 'error',
+    'import/no-absolute-path': 'error',
+    'import/no-duplicates': 'error',
+    'import/no-extraneous-dependencies': [
+      'error',
+      {
+        devDependencies: false,
+        optionalDependencies: false,
+        peerDependencies: false
+      }
+    ],
+    'import/no-useless-path-segments': [
+      'error',
+      {
+        noUselessIndex: true
+      }
+    ],
+    'import/order': [
+      'error',
+      {
+        groups: [
+          'index',
+          ['sibling', 'parent'],
+          'internal',
+          'external',
+          'builtin'
+        ]
+      }
+    ],
+    'max-classes-per-file': ['error', 1],
+    'max-depth': [
+      'error',
+      {
+        max: 2
+      }
+    ],
+    'default-param-last': 'off',
+    'no-bitwise': 'error',
+    'no-caller': 'error',
+    'no-console': 'error',
     'no-eval': 'error',
-    'eqeqeq': [
+    'no-restricted-syntax': ['error', 'ForInStatement'],
+    'no-throw-literal': 'error',
+    'no-undef-init': 'error',
+    'object-shorthand': 'error',
+    'one-var': ['error', 'never'],
+    'padding-line-between-statements': [
       'error',
-      'always',
-      {'null': 'ignore'}
+      {
+        blankLine: 'always',
+        next: 'return',
+        prev: '*'
+      }
     ],
-    'no-multiple-empty-lines': 'error',
-    'one-var': [
-      'error',
-      'never'
-    ],
-    'curly': 'error',
-    'no-empty': 'error',
-  }
-}
+    'prefer-arrow-callback': 'error',
+    'prefer-const': 'error',
+    'prefer-rest-params': 'error',
+    'prefer-spread': 'error',
+    'no-new-func': 'error',
+    'no-new-wrappers': 'error',
+    'radix': 'error'
+  },
+  overrides: [
+    {
+      env: {
+        mocha: true
+      },
+      files: ['*.spec.ts'],
+      parserOptions: {
+        project: ['./tsconfig.spec.json'],
+        tsconfigRootDir: __dirname
+      },
+      rules: {
+        'import/no-extraneous-dependencies': [
+          'error',
+          { devDependencies: ['**/*.spec.ts'] }
+        ],
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [
+              {
+                name: 'chai',
+                importNames: ['should'],
+                message: "Please `import 'chai/register-should'` instead"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+};

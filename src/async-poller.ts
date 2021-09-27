@@ -102,5 +102,6 @@ export async function asyncPoll<T>(
         reject(err);
       });
   };
+
   return new Promise(checkCondition);
 }
