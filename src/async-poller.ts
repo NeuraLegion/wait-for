@@ -85,11 +85,15 @@ export async function asyncPoll<T>(
    */
   pollTimeout: number = 30 * 1000
 ): Promise<T> {
-  const endTime = new Date().getTime() + pollTimeout;
-  const checkCondition = (resolve: (value: T | PromiseLike<T>) => void, reject: (reason: any) => void): void => {
+  const endTime = Date.now() + pollTimeout;
+  const checkCondition = (
+    resolve: (value: T | PromiseLike<T>) => void,
+    reject: (reason: any) => void
+  ): void => {
     Promise.resolve(fn())
       .then(result => {
-        const now = new Date().getTime();
+        const now = Date.now();
+
         if (result.done && result.data) {
           resolve(result.data);
         } else if (now < endTime) {
