@@ -1,5 +1,9 @@
-name: CI
-on: push
+name: CI / Automated testing
+
+on:
+  pull_request:
+    branches:
+      - '**'
 
 jobs:
   build:
@@ -7,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     container: node:16
     steps:
-      - name: Install rsync 📚
+      - name: Install packages
         run: apt-get update && apt-get install -y rsync git
       - uses: actions/checkout@v2.3.1
       - name: Install dependencies
@@ -40,11 +44,4 @@ jobs:
           api_token: ${{ secrets.NEXPLOIT_TOKEN }}
           scan: ${{ steps.scan.outputs.id }}
           wait_for: any
-          timeout: 60 # in general cases we'll have a timeout and it is good for this test
-      - name: Push changes to the branch
-        if: ${{ github.ref == 'refs/heads/master' }}
-        uses: JamesIves/github-pages-deploy-action@4.1.5
-        with:
-          token: ${{ secrets.PA_TOKEN }}
-          branch: release
-          folder: release
+          timeout: 30 # in general cases we'll have a timeout and it is good for this test
