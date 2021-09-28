@@ -69,11 +69,11 @@ pollInterval = 5 * 1000,
  */
 pollTimeout = 30 * 1000) {
     return __awaiter(this, void 0, void 0, function* () {
-        const endTime = new Date().getTime() + pollTimeout;
+        const endTime = Date.now() + pollTimeout;
         const checkCondition = (resolve, reject) => {
             Promise.resolve(fn())
                 .then(result => {
-                const now = new Date().getTime();
+                const now = Date.now();
                 if (result.done && result.data) {
                     resolve(result.data);
                 }
@@ -84,9 +84,7 @@ pollTimeout = 30 * 1000) {
                     reject(new Error('AsyncPoller: reached timeout'));
                 }
             })
-                .catch(err => {
-                reject(err);
-            });
+                .catch(err => reject(err));
         };
         return new Promise(checkCondition);
     });

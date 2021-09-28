@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 134:
+/***/ 549:
 /***/ (function(__unused_webpack_module, exports) {
 
 "use strict";
@@ -76,11 +76,11 @@ pollInterval = 5 * 1000,
  */
 pollTimeout = 30 * 1000) {
     return __awaiter(this, void 0, void 0, function* () {
-        const endTime = new Date().getTime() + pollTimeout;
+        const endTime = Date.now() + pollTimeout;
         const checkCondition = (resolve, reject) => {
             Promise.resolve(fn())
                 .then(result => {
-                const now = new Date().getTime();
+                const now = Date.now();
                 if (result.done && result.data) {
                     resolve(result.data);
                 }
@@ -91,9 +91,7 @@ pollTimeout = 30 * 1000) {
                     reject(new Error('AsyncPoller: reached timeout'));
                 }
             })
-                .catch(err => {
-                reject(err);
-            });
+                .catch(err => reject(err));
         };
         return new Promise(checkCondition);
     });
@@ -103,7 +101,7 @@ exports.asyncPoll = asyncPoll;
 
 /***/ }),
 
-/***/ 328:
+/***/ 283:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -137,71 +135,58 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(964));
-const rm = __importStar(__nccwpck_require__(235));
-const async_poller_1 = __nccwpck_require__(134);
+const core = __importStar(__nccwpck_require__(186));
+const RestClient_1 = __nccwpck_require__(405);
+const async_poller_1 = __nccwpck_require__(549);
 const apiToken = core.getInput('api_token');
 const scanId = core.getInput('scan');
 const hostname = core.getInput('hostname');
 const waitFor = core.getInput('wait_for');
 const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
-const baseUrl = hostname ? `https://$hostname` : 'https://nexploit.app';
-const restc = new rm.RestClient('GitHub Actions', baseUrl);
+const baseUrl = hostname ? `https://${hostname}` : 'https://nexploit.app';
+const restc = new RestClient_1.RestClient('GitHub Actions', baseUrl);
 const options = { additionalHeaders: { Authorization: `Api-Key ${apiToken}` } };
-function printDescriptionForIssues(issues) {
-    core.info('Issues were found:');
-    for (const issue of issues) {
-        core.info(`${issue.number} ${issue.type} issues`);
+const run = (uuid) => (0, async_poller_1.asyncPoll)(() => __awaiter(void 0, void 0, void 0, function* () {
+    const status = yield getStatus(uuid);
+    const { issuesBySeverity, status: data } = status;
+    const stop = issueFound(waitFor, issuesBySeverity);
+    const url = `${baseUrl}/scans/${uuid} `;
+    const result = {
+        data,
+        done: true,
+    };
+    if (stop) {
+        core.setFailed(`Issues were found. See on ${url} `);
+        printDescriptionForIssues(issuesBySeverity);
+        return result;
     }
-}
-function getStatus(uuid) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const restRes = yield restc.get(`api/v1/scans/${uuid}`, options);
-            return {
-                status: restRes.result ? restRes.result.status : '',
-                issuesBySeverity: restRes.result ? restRes.result.issuesBySeverity : [],
-            };
-        }
-        catch (err) {
-            const message = `Failed (${err.statusCode}) ${err.message}`;
-            core.setFailed(message);
-            throw new Error(message);
-        }
-    });
-}
-function run(uuid) {
-    (0, async_poller_1.asyncPoll)(() => __awaiter(this, void 0, void 0, function* () {
-        const status = yield getStatus(uuid);
-        const stop = issueFound(waitFor, status.issuesBySeverity);
-        const state = status.status;
-        const url = `${baseUrl}/scans/${uuid} `;
-        const result = {
-            done: true,
-            data: state,
-        };
-        if (stop === true) {
-            core.setFailed(`Issues were found.See on ${url} `);
-            printDescriptionForIssues(status.issuesBySeverity);
-            const restRes = yield restc.get(`api/v1/scans/${uuid}/reports/sarif`, options);
-            console.log(restRes);
+    switch (data) {
+        case 'failed':
+            core.setFailed(`Scan failed. See on ${url} `);
             return result;
-        }
-        else if (state === 'failed') {
-            core.setFailed(`Scan failed.See on ${url} `);
+        case 'stopped':
             return result;
-        }
-        else if (state === 'stopped') {
-            return result;
-        }
-        else {
+        default:
             result.done = false;
             return result;
-        }
-    }), interval, timeout).catch(e => core.info(e));
-}
-function issueFound(severity, issues) {
+    }
+}), interval, timeout).catch(e => core.info(e));
+const getStatus = (uuid) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const restRes = yield restc.get(`api/v1/scans/${uuid}`, options);
+        return {
+            status: restRes.result ? restRes.result.status : '',
+            issuesBySeverity: restRes.result ? restRes.result.issuesBySeverity : [],
+        };
+    }
+    catch (err) {
+        const message = `Failed (${err.statusCode}) ${err.message}`;
+        core.setFailed(message);
+        throw new Error(message);
+    }
+});
+const issueFound = (severity, issues) => {
     let types;
     if (severity === 'any') {
         types = ['Low', 'Medium', 'High'];
@@ -212,19 +197,21 @@ function issueFound(severity, issues) {
     else {
         types = ['High'];
     }
+    return issues.some(issue => issue.number > 0 && types.includes(issue.type));
+};
+const printDescriptionForIssues = (issues) => {
+    core.info('Issues were found:');
     for (const issue of issues) {
-        if (issue.number > 0 && types.includes(issue.type)) {
-            return true;
-        }
+        core.info(`${issue.number} ${issue.type} issues`);
     }
-    return false;
-}
+};
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 run(scanId);
 
 
 /***/ }),
 
-/***/ 306:
+/***/ 351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -251,7 +238,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.issue = exports.issueCommand = void 0;
 const os = __importStar(__nccwpck_require__(87));
-const utils_1 = __nccwpck_require__(496);
+const utils_1 = __nccwpck_require__(278);
 /**
  * Commands
  *
@@ -323,7 +310,7 @@ function escapeProperty(s) {
 
 /***/ }),
 
-/***/ 964:
+/***/ 186:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -358,9 +345,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
-const command_1 = __nccwpck_require__(306);
-const file_command_1 = __nccwpck_require__(85);
-const utils_1 = __nccwpck_require__(496);
+const command_1 = __nccwpck_require__(351);
+const file_command_1 = __nccwpck_require__(717);
+const utils_1 = __nccwpck_require__(278);
 const os = __importStar(__nccwpck_require__(87));
 const path = __importStar(__nccwpck_require__(622));
 /**
@@ -635,7 +622,7 @@ exports.getState = getState;
 
 /***/ }),
 
-/***/ 85:
+/***/ 717:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -666,7 +653,7 @@ exports.issueCommand = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fs = __importStar(__nccwpck_require__(747));
 const os = __importStar(__nccwpck_require__(87));
-const utils_1 = __nccwpck_require__(496);
+const utils_1 = __nccwpck_require__(278);
 function issueCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
     if (!filePath) {
@@ -684,7 +671,7 @@ exports.issueCommand = issueCommand;
 
 /***/ }),
 
-/***/ 496:
+/***/ 278:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -730,7 +717,7 @@ exports.toCommandProperties = toCommandProperties;
 
 /***/ }),
 
-/***/ 602:
+/***/ 907:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
@@ -739,7 +726,7 @@ exports.toCommandProperties = toCommandProperties;
 var replace = String.prototype.replace;
 var percentTwenties = /%20/g;
 
-var util = __nccwpck_require__(971);
+var util = __nccwpck_require__(360);
 
 var Format = {
     RFC1738: 'RFC1738',
@@ -764,15 +751,15 @@ module.exports = util.assign(
 
 /***/ }),
 
-/***/ 763:
+/***/ 760:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
 
-var stringify = __nccwpck_require__(764);
-var parse = __nccwpck_require__(254);
-var formats = __nccwpck_require__(602);
+var stringify = __nccwpck_require__(954);
+var parse = __nccwpck_require__(912);
+var formats = __nccwpck_require__(907);
 
 module.exports = {
     formats: formats,
@@ -783,13 +770,13 @@ module.exports = {
 
 /***/ }),
 
-/***/ 254:
+/***/ 912:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
 
-var utils = __nccwpck_require__(971);
+var utils = __nccwpck_require__(360);
 
 var has = Object.prototype.hasOwnProperty;
 var isArray = Array.isArray;
@@ -1059,14 +1046,14 @@ module.exports = function (str, opts) {
 
 /***/ }),
 
-/***/ 764:
+/***/ 954:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
 
-var utils = __nccwpck_require__(971);
-var formats = __nccwpck_require__(602);
+var utils = __nccwpck_require__(360);
+var formats = __nccwpck_require__(907);
 var has = Object.prototype.hasOwnProperty;
 
 var arrayPrefixGenerators = {
@@ -1346,7 +1333,7 @@ module.exports = function (object, opts) {
 
 /***/ }),
 
-/***/ 971:
+/***/ 360:
 /***/ ((module) => {
 
 "use strict";
@@ -1590,15 +1577,15 @@ module.exports = {
 
 /***/ }),
 
-/***/ 379:
+/***/ 294:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-module.exports = __nccwpck_require__(234);
+module.exports = __nccwpck_require__(219);
 
 
 /***/ }),
 
-/***/ 234:
+/***/ 219:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -1870,7 +1857,7 @@ exports.debug = debug; // for test
 
 /***/ }),
 
-/***/ 974:
+/***/ 538:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -1889,7 +1876,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const url = __nccwpck_require__(835);
 const http = __nccwpck_require__(605);
 const https = __nccwpck_require__(211);
-const util = __nccwpck_require__(183);
+const util = __nccwpck_require__(470);
 let fs;
 let tunnel;
 var HttpCodes;
@@ -2283,7 +2270,7 @@ class HttpClient {
         if (useProxy) {
             // If using proxy, need tunnel
             if (!tunnel) {
-                tunnel = __nccwpck_require__(379);
+                tunnel = __nccwpck_require__(294);
             }
             const agentOptions = {
                 maxSockets: maxSockets,
@@ -2379,7 +2366,7 @@ exports.HttpClient = HttpClient;
 
 /***/ }),
 
-/***/ 235:
+/***/ 405:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -2395,8 +2382,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const httpm = __nccwpck_require__(974);
-const util = __nccwpck_require__(183);
+const httpm = __nccwpck_require__(538);
+const util = __nccwpck_require__(470);
 class RestClient {
     /**
      * Creates an instance of the RestClient
@@ -2604,7 +2591,7 @@ exports.RestClient = RestClient;
 
 /***/ }),
 
-/***/ 183:
+/***/ 470:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -2620,7 +2607,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const qs = __nccwpck_require__(763);
+const qs = __nccwpck_require__(760);
 const url = __nccwpck_require__(835);
 const path = __nccwpck_require__(622);
 const zlib = __nccwpck_require__(761);
@@ -2891,7 +2878,7 @@ module.exports = require("zlib");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(328);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(283);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()
