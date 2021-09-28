@@ -84,7 +84,9 @@ pollTimeout = 30 * 1000) {
                     reject(new Error('AsyncPoller: reached timeout'));
                 }
             })
-                .catch(err => reject(err));
+                .catch(err => {
+                reject(err);
+            });
         };
         return new Promise(checkCondition);
     });
