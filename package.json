@@ -1,13 +1,14 @@
 {
-  "name": "gh-actions",
+  "name": "wait-for",
   "version": "0.1.0",
-  "description": "",
+  "description": "This action polls a Nexploit scan until it returns a detected issue, or its time runs out.",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --check src",
-    "pack": "ncc build dist/index.js"
+    "pack": "ncc build dist/index.js",
+    "prepare": "husky install"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +19,8 @@
     "typed-rest-client": "^1.8.6"
   },
   "devDependencies": {
+    "@commitlint/cli": "^13.2.0",
+    "@commitlint/config-conventional": "^13.2.0",
     "@types/node": "^16.9.6",
     "@typescript-eslint/eslint-plugin": "^4.31.2",
     "@typescript-eslint/parser": "^4.31.2",
@@ -26,7 +29,21 @@
     "eslint-import-resolver-typescript": "^2.5.0",
     "eslint-plugin-import": "^2.24.2",
     "eslint-plugin-prettier": "^4.0.0",
+    "husky": "^7.0.2",
+    "lint-staged": "^11.1.2",
     "prettier": "^2.4.1",
     "typescript": "^4.4.3"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write",
+      "git add"
+    ]
   }
 }
