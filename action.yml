@@ -17,9 +17,25 @@ inputs:
     description: 'Wait for first issue: *any*, *medium*, *high*'
     required: true
   timeout:
-    description: Time in seconds for the action to wait for issues
+    description: 'Time in seconds for the action to wait for issues'
     required: false
     default: 600
+  code_scanning_alerts:
+    description: 'If `true`, upload a Code Scanning Alert in GitHub if scan find a first issue'
+    required: false
+    default: false
+  github_token:
+    description: 'The GitHub Token for uploading Code Scanning report. Required if `codeScanningAlerts` is enabled'
+    required: false
+    default: ${{ github.token }}}
+  ref:
+    description: 'The branch or tag ref that triggered the workflow. For example, `refs/heads/feature-branch-1`'
+    required: false
+    default: ${{ github.ref }}}
+  commit_sha:
+    description: 'The commit SHA that triggered the workflow. For example, `ffac537e6cbbf934b08745a378932722df287a53`'
+    required: false
+    default: ${{ github.sha }}}
 
 outputs:
   url:
