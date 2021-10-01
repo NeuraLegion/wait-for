@@ -20,11 +20,11 @@ inputs:
     description: 'Time in seconds for the action to wait for issues'
     required: false
     default: 600
-  codeScanningAlerts:
-    description: 'If `true`, upload a Code Scanning Alert in GitHub if scan find a first issue according to `wait_for`'
+  code_scanning_alerts:
+    description: 'If `true`, upload a Code Scanning Alert in GitHub if scan find a first issue'
     required: false
     default: false
-  githubToken:
+  github_token:
     description: 'The GitHub Token for uploading Code Scanning report. Required if `codeScanningAlerts` is enabled'
     required: false
     default: ${{ github.token }}}

@@ -1,6 +1,7 @@
-import { asyncPoll, AsyncData } from './async-poller';
+import { AsyncData, asyncPoll } from './async-poller';
 import * as core from '@actions/core';
-import { RestClient } from 'typed-rest-client/RestClient';
+import axios from 'axios';
+import { pathToFileURL } from 'url';
 
 type Severity = 'any' | 'medium' | 'high';
 
@@ -22,9 +23,9 @@ const waitFor = core.getInput('wait_for') as Severity;
 const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
 
-const baseUrl = hostname ? `https://${hostname}` : 'https://nexploit.app';
-const restc = new RestClient('GitHub Actions', baseUrl);
-const options = { additionalHeaders: { Authorization: `Api-Key ${apiToken}` } };
+const nexploitBaseUrl = (
+  hostname ? `https://${hostname}` : 'https://nexploit.app'
+).replace(/\/$/, '');
 
 const run = (uuid: string) =>
   asyncPoll(
@@ -34,15 +35,14 @@ const run = (uuid: string) =>
 
       const stop = issueFound(waitFor, issuesBySeverity);
 
-      const url = `${baseUrl}/scans/${uuid} `;
+      const url = `${nexploitBaseUrl}/scans/${uuid} `;
       const result: AsyncData<any> = {
         data,
         done: true
       };
 
       if (stop) {
-        core.setFailed(`Issues were found. See on ${url} `);
-        printDescriptionForIssues(issuesBySeverity);
+        await displayResults({ issues: issuesBySeverity, url });
 
         return result;
       }
@@ -66,14 +66,22 @@ const run = (uuid: string) =>
 
 const getStatus = async (uuid: string): Promise<Status | never> => {
   try {
-    const restRes = await restc.get<Status>(`api/v1/scans/${uuid}`, options);
+    const res = await axios.get<Status>(
+      `${nexploitBaseUrl}/api/v1/scans/${uuid}`,
+      {
+        headers: { authorization: `api-key ${apiToken}` }
+      }
+    );
+
+    const { data } = res;
 
     return {
-      status: restRes.result ? restRes.result.status : '',
-      issuesBySeverity: restRes.result ? restRes.result.issuesBySeverity : []
+      status: data ? data.status : '',
+      issuesBySeverity: data ? data.issuesBySeverity : []
     };
   } catch (err: any) {
-    const message = `Failed (${err.statusCode}) ${err.message}`;
+    core.debug(err);
+    const message = `Failed to retrieve the actual status.`;
     core.setFailed(message);
     throw new Error(message);
   }
@@ -104,12 +112,93 @@ const printDescriptionForIssues = (issues: IssuesBySeverity[]) => {
   }
 };
 
-const getSarifOptions = async () => {
-  const codeScanningAlerts = core.getBooleanInput('codeScanningAlerts');
+const displayResults = async ({
+  issues,
+  url
+}: {
+  issues: IssuesBySeverity[];
+  url: string;
+}) => {
+  core.setFailed(`Issues were found. See on ${url} `);
+
+  printDescriptionForIssues(issues);
+
+  const options = getSarifOptions();
+
+  try {
+    if (options?.codeScanningAlerts && options?.token) {
+      await uploadSarif({ ...options, scanId });
+    }
+  } catch (e: any) {
+    core.debug(e);
+    core.error('Cannot upload SARIF report.');
+  }
+};
+
+const uploadSarif = async (params: {
+  codeScanningAlerts: boolean;
+  ref: string;
+  scanId: string;
+  commitSha: string;
+  token: string;
+}) => {
+  const res = await axios.get<string>(
+    `${nexploitBaseUrl}/api/v1/scans/${params.scanId}/reports/sarif`,
+    {
+      responseType: 'arraybuffer',
+      headers: { authorization: `api-key ${apiToken}` }
+    }
+  );
+
+  if (!res.data) {
+    throw new Error(
+      'Cannot upload a report to GitHub. SARIF report are empty.'
+    );
+  }
+
+  const sarif = Buffer.from(res.data).toString('base64');
+
+  const githubRepository = process.env['GITHUB_REPOSITORY'];
+
+  if (githubRepository == null) {
+    throw new Error(`GITHUB_REPOSITORY environment variable must be set`);
+  }
+
+  const [owner, repo]: string[] = githubRepository.split('/');
+
+  core.info('Uploading SARIF results to GitHub.');
+
+  await axios.post(
+    `https://api.github.com/repos/${owner}/${repo}/code-scanning/sarifs`,
+    {
+      sarif,
+      ref: params.ref,
+      commit_sha: params.commitSha,
+      tool_name: 'NeuraLegion’s DAST',
+      checkout_uri: pathToFileURL(process.cwd()).toString()
+    },
+    {
+      headers: {
+        Authorization: `token ${params.token}`
+      }
+    }
+  );
+  core.info('SARIF upload complete.');
+};
+
+const getSarifOptions: () => {
+  codeScanningAlerts: boolean;
+  ref: string;
+  commitSha: string;
+  token: string;
+} = () => {
+  const codeScanningAlerts = core.getBooleanInput('code_scanning_alerts');
   const ref = core.getInput('ref') ?? process.env.GITHUB_REF;
   const commitSha = core.getInput('commit_sha') ?? process.env.GITHUB_SHA;
+  const token = core.getInput('github_token') ?? process.env.GITHUB_TOKEN;
 
   return {
+    token,
     codeScanningAlerts,
     ref,
     commitSha

@@ -16,7 +16,7 @@
   "dependencies": {
     "@actions/core": "^1.5.0",
     "@actions/github": "^5.0.0",
-    "typed-rest-client": "^1.8.6"
+    "axios": "^0.22.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^13.2.0",
