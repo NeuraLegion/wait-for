@@ -104,5 +104,17 @@ const printDescriptionForIssues = (issues: IssuesBySeverity[]) => {
   }
 };
 
+const getSarifOptions = async () => {
+  const codeScanningAlerts = core.getBooleanInput('codeScanningAlerts');
+  const ref = core.getInput('ref') ?? process.env.GITHUB_REF;
+  const commitSha = core.getInput('commit_sha') ?? process.env.GITHUB_SHA;
+
+  return {
+    codeScanningAlerts,
+    ref,
+    commitSha
+  };
+};
+
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 run(scanId);
