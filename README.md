@@ -43,6 +43,13 @@ _Example:_ `wait_for: any`
 
 _Example:_  ` timeout: 55`
 
+### `code_scanning_alerts`
+
+If set to `true`, uploads SARIF scan data to GitHub so that scan results are available from Code Scanning.
+Requires to be set `github_token`.
+
+_Example:_  `code_scanning_alerts: true`
+
 ## Outputs
 
 ### `url`
@@ -82,4 +89,6 @@ start_and_wait_scan:
       scan: ${{ steps.start.outputs.id }}
       wait_for: any
       timeout: 55
+      code_scanning_alerts: true
+      github_token: ${{ github.token }}
 ```
