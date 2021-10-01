@@ -16,6 +16,7 @@ inputs:
   wait_for:
     description: 'Wait for first issue: *any*, *medium*, *high*'
     required: true
+    default: any
   timeout:
     description: 'Time in seconds for the action to wait for issues'
     required: false

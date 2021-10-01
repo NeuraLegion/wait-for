@@ -148,7 +148,9 @@ const url_1 = __nccwpck_require__(8835);
 const apiToken = core.getInput('api_token');
 const scanId = core.getInput('scan');
 const hostname = core.getInput('hostname');
-const waitFor = core.getInput('wait_for');
+const waitFor = core
+    .getInput('wait_for', { trimWhitespace: true })
+    .toLowerCase();
 const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
 const nexploitBaseUrl = (hostname ? `https://${hostname}` : 'https://nexploit.app').replace(/\/$/, '');
