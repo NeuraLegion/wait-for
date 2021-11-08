@@ -26,8 +26,8 @@ const waitFor = core
 const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
 
-const nexploitBaseUrl = (
-  hostname ? `https://${hostname}` : 'https://nexploit.app'
+const baseUrl = (
+  hostname ? `https://${hostname}` : 'https://app.neuralegion.com'
 ).replace(/\/$/, '');
 
 axiosRetry(axios, { retries: 3 });
@@ -40,7 +40,7 @@ const run = (uuid: string) =>
 
       const stop = issueFound(waitFor, issuesBySeverity);
 
-      const url = `${nexploitBaseUrl}/scans/${uuid} `;
+      const url = `${baseUrl}/scans/${uuid} `;
       const result: AsyncData<any> = {
         data,
         done: true
@@ -71,12 +71,9 @@ const run = (uuid: string) =>
 
 const getStatus = async (uuid: string): Promise<Status | never> => {
   try {
-    const res = await axios.get<Status>(
-      `${nexploitBaseUrl}/api/v1/scans/${uuid}`,
-      {
-        headers: { authorization: `api-key ${apiToken}` }
-      }
-    );
+    const res = await axios.get<Status>(`${baseUrl}/api/v1/scans/${uuid}`, {
+      headers: { authorization: `api-key ${apiToken}` }
+    });
 
     const { data } = res;
 
@@ -148,7 +145,7 @@ const uploadSarif = async (params: {
   token: string;
 }) => {
   const res = await axios.get<string>(
-    `${nexploitBaseUrl}/api/v1/scans/${params.scanId}/reports/sarif`,
+    `${baseUrl}/api/v1/scans/${params.scanId}/reports/sarif`,
     {
       responseType: 'arraybuffer',
       headers: { authorization: `api-key ${apiToken}` }

@@ -1,7 +1,7 @@
 {
   "name": "wait-for",
   "version": "0.1.0",
-  "description": "This action polls a Nexploit scan until it returns a detected issue, or its time runs out.",
+  "description": "This action polls a NeuraLegion scan until it returns a detected issue, or its time runs out.",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
@@ -10,9 +10,16 @@
     "pack": "ncc build dist/index.js",
     "prepare": "is-ci || husky install"
   },
-  "keywords": [],
+  "keywords": [
+    "github",
+    "actions",
+    "scan",
+    "security",
+    "dast",
+    "iast"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.5.0",
     "@actions/github": "^5.0.0",
