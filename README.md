@@ -1,6 +1,6 @@
-# Poll Results of a Nexploit Scan
+# Poll Results of a NeuraLegion Scan
 
-This action polls a Nexploit scan until it returns a detected issue, or its time runs out. 
+This action polls a NeuraLegion scan until it returns a detected issue, or its time runs out. 
 
 ### Build Secure Apps & APIs. Fast.
 
@@ -41,13 +41,13 @@ More information is available on NeuraLegion’s:
 
 ### `api_token`
 
-**Required**. Your Nexploit API authorization token (key). You can generate it in the **Organization** section on [nexploit.app](https://nexploit.app/login). Find more information [here](https://kb.neuralegion.com/#/guide/np-web-ui/advanced-set-up/managing-org?id=managing-organization-apicli-authentication-tokens).
+**Required**. Your NeuraLegion API authorization token (key). You can generate it in the **Organization** section on [app.neuralegion.com](https://app.neuralegion.com/login). Find more information [here](https://docs.neuralegion.com/docs/manage-your-organization#manage-organization-apicli-authentication-tokens).
 
-_Example:_ `api_token: ${{ secrets.NEXPLOIT_TOKEN }}`
+_Example:_ `api_token: ${{ secrets.NEURALEGION_TOKEN }}`
 
 ### `scan`
 
-**Required**. ID of an existing scan to be restarted. You can get the scan ID in the Scans section on [nexploit.app](https://nexploit.app/login).
+**Required**. ID of an existing scan to be restarted. You can get the scan ID in the Scans section on [app.neuralegion.com](https://app.neuralegion.com/login).
 
 _Example:_ `scan: ${{ steps.start.outputs.id }}`
 
@@ -83,13 +83,13 @@ URL of the resulting scan.
 ```yml
 start_and_wait_scan:
   runs-on: ubuntu-latest
-  name: A job to run a Nexploit scan
+  name: A job to run a NeuraLegion scan
   steps:
-  - name: Start Nexploit Scan 🏁
+  - name: Start NeuraLegion Scan 🏁
     id: start
     uses: NeuraLegion/run-scan@master
     with:
-      api_token: ${{ secrets.NEXPLOIT_TOKEN }}
+      api_token: ${{ secrets.NEURALEGION_TOKEN }}
       name: GitHub scan ${{ github.sha }}
       discovery_types: |
         [ "crawler", "archive" ]
@@ -105,7 +105,7 @@ start_and_wait_scan:
     id: wait
     uses: NeuraLegion/wait-for@master
     with:
-      api_token: ${{ secrets.NEXPLOIT_TOKEN }}
+      api_token: ${{ secrets.NEURALEGION_TOKEN }}
       scan: ${{ steps.start.outputs.id }}
       wait_for: any
       timeout: 55
