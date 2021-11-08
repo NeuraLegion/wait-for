@@ -153,13 +153,13 @@ const waitFor = core
     .toLowerCase();
 const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
-const nexploitBaseUrl = (hostname ? `https://${hostname}` : 'https://nexploit.app').replace(/\/$/, '');
+const baseUrl = (hostname ? `https://${hostname}` : 'https://app.neuralegion.com').replace(/\/$/, '');
 (0, axios_retry_1.default)(axios_1.default, { retries: 3 });
 const run = (uuid) => (0, async_poller_1.asyncPoll)(() => __awaiter(void 0, void 0, void 0, function* () {
     const status = yield getStatus(uuid);
     const { issuesBySeverity, status: data } = status;
     const stop = issueFound(waitFor, issuesBySeverity);
-    const url = `${nexploitBaseUrl}/scans/${uuid} `;
+    const url = `${baseUrl}/scans/${uuid} `;
     const result = {
         data,
         done: true
@@ -181,7 +181,7 @@ const run = (uuid) => (0, async_poller_1.asyncPoll)(() => __awaiter(void 0, void
 }), interval, timeout).catch(e => core.info(e));
 const getStatus = (uuid) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const res = yield axios_1.default.get(`${nexploitBaseUrl}/api/v1/scans/${uuid}`, {
+        const res = yield axios_1.default.get(`${baseUrl}/api/v1/scans/${uuid}`, {
             headers: { authorization: `api-key ${apiToken}` }
         });
         const { data } = res;
@@ -231,7 +231,7 @@ const displayResults = ({ issues, url }) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 const uploadSarif = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const res = yield axios_1.default.get(`${nexploitBaseUrl}/api/v1/scans/${params.scanId}/reports/sarif`, {
+    const res = yield axios_1.default.get(`${baseUrl}/api/v1/scans/${params.scanId}/reports/sarif`, {
         responseType: 'arraybuffer',
         headers: { authorization: `api-key ${apiToken}` }
     });
