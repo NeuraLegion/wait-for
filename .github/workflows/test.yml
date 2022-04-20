@@ -3,7 +3,7 @@ name: CI / Automated testing
 on:
   pull_request:
     branches:
-      - '**'
+      - "**"
 
 jobs:
   build:
@@ -24,7 +24,7 @@ jobs:
           cp README.md release/
           cp action.yml release/
           cp -R dist/ release/dist/
-      - name: Start NeuraLegion Scan 🏁
+      - name: Start Brightsec Scan 🏁
         id: scan
         uses: NeuraLegion/run-scan@release
         with:

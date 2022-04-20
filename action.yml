@@ -1,5 +1,5 @@
-name: NeuraLegion Wait for Issues
-description: "Run a NeuraLegion scan right in GitHub Action"
+name: Brightsec Wait for Issues
+description: "Run a Brightsec scan right in GitHub Action"
 branding:
   icon: clock
   color: blue
