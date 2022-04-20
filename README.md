@@ -1,6 +1,6 @@
 # Poll Results of a NeuraLegion Scan
 
-This action polls a NeuraLegion scan until it returns a detected issue, or its time runs out. 
+This action polls a NeuraLegion scan until it returns a detected issue, or its time runs out.
 
 ### Build Secure Apps & APIs. Fast.
 
@@ -32,7 +32,7 @@ Stop chasing ghosts and wasting time. NeuraLegion doesn’t return false positiv
 NeuraLegion tests for all common vulnerabilities, such as SQL injection, CSRF, XSS, and XXE -- as well as uncommon vulnerabilities, such as business logic vulnerabilities.
 
 More information is available on NeuraLegion’s:
-* [Website](https://www.neuralegion.com/)
+* [Website](https://www.brightsec.com/)
 * [Knowledge base](https://docs.neuralegion.com/docs/quickstart)
 * [YouTube channel](https://www.youtube.com/channel/UCoIC0T1pmozq3eKLsUR2uUw)
 * [GitHub Actions](https://github.com/marketplace?query=neuralegion+)
@@ -41,13 +41,13 @@ More information is available on NeuraLegion’s:
 
 ### `api_token`
 
-**Required**. Your NeuraLegion API authorization token (key). You can generate it in the **Organization** section on [app.neuralegion.com](https://app.neuralegion.com/login). Find more information [here](https://docs.neuralegion.com/docs/manage-your-organization#manage-organization-apicli-authentication-tokens).
+**Required**. Your NeuraLegion API authorization token (key). You can generate it in the **Organization** section in [the Bright app](https://app.neuralegion.com/login). Find more information [here](https://docs.brightsec.com/docs/manage-your-organization#manage-organization-apicli-authentication-tokens).
 
 _Example:_ `api_token: ${{ secrets.NEURALEGION_TOKEN }}`
 
 ### `scan`
 
-**Required**. ID of an existing scan to be restarted. You can get the scan ID in the Scans section on [app.neuralegion.com](https://app.neuralegion.com/login).
+**Required**. ID of an existing scan to be restarted. You can get the scan ID in the Scans section in [the Bright app](https://app.neuralegion.com/login).
 
 _Example:_ `scan: ${{ steps.start.outputs.id }}`
 
