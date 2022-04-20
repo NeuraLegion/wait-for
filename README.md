@@ -41,13 +41,13 @@ More information is available on Bright’s:
 
 ### `api_token`
 
-**Required**. Your Bright API authorization token (key). You can generate it in the **Organization** section in [the Bright app](https://app.brightsec.com/login). Find more information [here](https://docs.brightsec.com/docs/manage-your-organization#manage-organization-apicli-authentication-tokens).
+**Required**. Your Bright API authorization token (key). You can generate it in the **Organization** section in [the Bright app](https://app.neuralegion.com/login). Find more information [here](https://docs.brightsec.com/docs/manage-your-organization#manage-organization-apicli-authentication-tokens).
 
 _Example:_ `api_token: ${{ secrets.NEURALEGION_TOKEN }}`
 
 ### `scan`
 
-**Required**. ID of an existing scan to be restarted. You can get the scan ID in the Scans section in [the Bright app](https://app.brightsec.com/login).
+**Required**. ID of an existing scan to be restarted. You can get the scan ID in the Scans section in [the Bright app](https://app.neuralegion.com/login).
 
 _Example:_ `scan: ${{ steps.start.outputs.id }}`
 

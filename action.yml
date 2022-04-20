@@ -11,7 +11,7 @@ inputs:
     description: 'Scan ID to wait for'
     required: true
   hostname:
-    description: 'Hostname. Default is app.brightsec.com'
+    description: 'Hostname. Default is app.neuralegion.com'
     required: false
   wait_for:
     description: 'Wait for first issue: *any*, *medium*, *high*'
