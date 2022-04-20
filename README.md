@@ -4,7 +4,7 @@ This action polls a NeuraLegion scan until it returns a detected issue, or its t
 
 ### Build Secure Apps & APIs. Fast.
 
-[NeuraLegion](https://www.neuralegion.com) is a powerful dynamic application & API security testing (DAST) platform that security teams trust and developers love.
+[NeuraLegion](https://www.brightsec.com) is a powerful dynamic application & API security testing (DAST) platform that security teams trust and developers love.
 
 ### Automatically Tests Every Aspect of Your Apps & APIs
 
@@ -33,7 +33,7 @@ NeuraLegion tests for all common vulnerabilities, such as SQL injection, CSRF, X
 
 More information is available on NeuraLegion’s:
 * [Website](https://www.brightsec.com/)
-* [Knowledge base](https://docs.neuralegion.com/docs/quickstart)
+* [Knowledge base](https://docs.brightsec.com/docs/quickstart)
 * [YouTube channel](https://www.youtube.com/channel/UCoIC0T1pmozq3eKLsUR2uUw)
 * [GitHub Actions](https://github.com/marketplace?query=neuralegion+)
 
@@ -41,13 +41,13 @@ More information is available on NeuraLegion’s:
 
 ### `api_token`
 
-**Required**. Your NeuraLegion API authorization token (key). You can generate it in the **Organization** section in [the Bright app](https://app.neuralegion.com/login). Find more information [here](https://docs.brightsec.com/docs/manage-your-organization#manage-organization-apicli-authentication-tokens).
+**Required**. Your NeuraLegion API authorization token (key). You can generate it in the **Organization** section in [the Bright app](https://app.brightsec.com/login). Find more information [here](https://docs.brightsec.com/docs/manage-your-organization#manage-organization-apicli-authentication-tokens).
 
 _Example:_ `api_token: ${{ secrets.NEURALEGION_TOKEN }}`
 
 ### `scan`
 
-**Required**. ID of an existing scan to be restarted. You can get the scan ID in the Scans section in [the Bright app](https://app.neuralegion.com/login).
+**Required**. ID of an existing scan to be restarted. You can get the scan ID in the Scans section in [the Bright app](https://app.brightsec.com/login).
 
 _Example:_ `scan: ${{ steps.start.outputs.id }}`
 

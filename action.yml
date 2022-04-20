@@ -1,45 +1,45 @@
 name: NeuraLegion Wait for Issues
-description: 'Run a NeuraLegion scan right in GitHub Action'
+description: "Run a NeuraLegion scan right in GitHub Action"
 branding:
   icon: clock
   color: blue
 inputs:
   api_token:
-    description: 'Api Token. You can generate it in Organization section'
+    description: "Api Token. You can generate it in Organization section"
     required: true
   scan:
-    description: 'Scan ID to wait for'
+    description: "Scan ID to wait for"
     required: true
   hostname:
-    description: 'Hostname. Default is app.neuralegion.com'
+    description: "Hostname. Default is app.brightsec.com"
     required: false
   wait_for:
-    description: 'Wait for first issue: *any*, *medium*, *high*'
+    description: "Wait for first issue: *any*, *medium*, *high*"
     required: true
   timeout:
-    description: 'Time in seconds for the action to wait for issues'
+    description: "Time in seconds for the action to wait for issues"
     required: false
     default: 600
   code_scanning_alerts:
-    description: 'If `true`, upload a Code Scanning Alert in GitHub if scan find a first issue'
+    description: "If `true`, upload a Code Scanning Alert in GitHub if scan find a first issue"
     required: false
     default: false
   github_token:
-    description: 'The GitHub Token for uploading Code Scanning report. Required if `codeScanningAlerts` is enabled'
+    description: "The GitHub Token for uploading Code Scanning report. Required if `codeScanningAlerts` is enabled"
     required: false
     default: ${{ github.token }}
   ref:
-    description: 'The branch or tag ref that triggered the workflow. For example, `refs/heads/feature-branch-1`'
+    description: "The branch or tag ref that triggered the workflow. For example, `refs/heads/feature-branch-1`"
     required: false
     default: ${{ github.ref }}
   commit_sha:
-    description: 'The commit SHA that triggered the workflow. For example, `ffac537e6cbbf934b08745a378932722df287a53`'
+    description: "The commit SHA that triggered the workflow. For example, `ffac537e6cbbf934b08745a378932722df287a53`"
     required: false
     default: ${{ github.sha }}
 
 outputs:
   url:
-    description: 'Url of the resulting scan'
+    description: "Url of the resulting scan"
 runs:
-  using: 'node12'
-  main: 'dist/index.js'
+  using: "node12"
+  main: "dist/index.js"
