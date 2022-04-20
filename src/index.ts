@@ -176,7 +176,7 @@ const uploadSarif = async (params: {
       sarif,
       ref: params.ref,
       commit_sha: params.commitSha,
-      tool_name: 'Bright’s DAST',
+      tool_name: 'NeuraLegion’s DAST',
       checkout_uri: pathToFileURL(process.cwd()).toString()
     },
     {
