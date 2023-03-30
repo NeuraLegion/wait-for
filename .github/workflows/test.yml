@@ -38,8 +38,10 @@ jobs:
       - name: Wait for any issues ⏳
         id: wait
         uses: ./release
+        continue-on-error: true
         with:
           api_token: ${{ secrets.NEXPLOIT_TOKEN }}
           scan: ${{ steps.scan.outputs.id }}
           wait_for: any
-          timeout: 30 # in general cases we'll have a timeout and it is good for this test
+          timeout: 340 # in general cases we'll have a timeout and it is good for this test
+

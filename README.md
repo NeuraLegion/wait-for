@@ -53,7 +53,7 @@ _Example:_ `scan: ${{ steps.start.outputs.id }}`
 
 ### `wait_for`
 
-**Required**. Set the severity of the first issue to wait for: *any*, *medium*, *high*.
+**Required**. Set the severity of the first issue to wait for: *any*, *medium*, *high*, *critical*.
 
 _Example:_ `wait_for: any`
 
