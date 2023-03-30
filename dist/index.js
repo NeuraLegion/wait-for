@@ -88,7 +88,7 @@ pollTimeout = 30 * 1000) {
                     setTimeout(checkCondition, pollInterval, resolve, reject);
                 }
                 else {
-                    reject(new Error('AsyncPoller: reached timeout'));
+                    reject(new Error('The pooling timed out.'));
                 }
             })
                 .catch(err => {
@@ -141,6 +141,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const async_poller_1 = __nccwpck_require__(8549);
+const status_1 = __nccwpck_require__(1279);
+const issues_1 = __nccwpck_require__(5253);
 const core = __importStar(__nccwpck_require__(2186));
 const axios_1 = __importDefault(__nccwpck_require__(6545));
 const axios_retry_1 = __importDefault(__nccwpck_require__(9179));
@@ -148,47 +150,19 @@ const url_1 = __nccwpck_require__(7310);
 const apiToken = core.getInput('api_token');
 const scanId = core.getInput('scan');
 const hostname = core.getInput('hostname');
-const waitFor = core
+const threshold = core
     .getInput('wait_for', { trimWhitespace: true })
     .toLowerCase();
 const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
 const baseUrl = (hostname ? `https://${hostname}` : 'https://app.neuralegion.com').replace(/\/$/, '');
 (0, axios_retry_1.default)(axios_1.default, { retries: 3 });
-const run = (uuid) => (0, async_poller_1.asyncPoll)(() => __awaiter(void 0, void 0, void 0, function* () {
-    const status = yield getStatus(uuid);
-    const { issuesBySeverity, status: data } = status;
-    const stop = issueFound(waitFor, issuesBySeverity);
-    const url = `${baseUrl}/scans/${uuid} `;
-    const result = {
-        data,
-        done: true
-    };
-    if (stop) {
-        yield displayResults({ issues: issuesBySeverity, url });
-        return result;
-    }
-    switch (data) {
-        case 'failed':
-            core.setFailed(`Scan failed. See on ${url} `);
-            return result;
-        case 'stopped':
-            return result;
-        default:
-            result.done = false;
-            return result;
-    }
-}), interval, timeout).catch(e => core.info(e));
-const getStatus = (uuid) => __awaiter(void 0, void 0, void 0, function* () {
+const getScanStatus = (uuid) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const res = yield axios_1.default.get(`${baseUrl}/api/v1/scans/${uuid}`, {
-            headers: { authorization: `api-key ${apiToken}` }
+        return yield (0, status_1.getStatus)(uuid, {
+            baseUrl,
+            token: apiToken
         });
-        const { data } = res;
-        return {
-            status: data ? data.status : '',
-            issuesBySeverity: data ? data.issuesBySeverity : []
-        };
     }
     catch (err) {
         core.debug(err);
@@ -197,28 +171,17 @@ const getStatus = (uuid) => __awaiter(void 0, void 0, void 0, function* () {
         throw new Error(message);
     }
 });
-const issueFound = (severity, issues) => {
-    let types;
-    if (severity === 'any') {
-        types = ['Low', 'Medium', 'High'];
-    }
-    else if (severity === 'medium') {
-        types = ['Medium', 'High'];
-    }
-    else {
-        types = ['High'];
-    }
-    return issues.some(issue => issue.number > 0 && types.includes(issue.type));
-};
-const printDescriptionForIssues = (issues) => {
+const printDescriptionForIssues = (status) => {
+    const issuesCounters = (0, issues_1.getIssuesCounters)(status);
     core.info('Issues were found:');
-    for (const issue of issues) {
-        core.info(`${issue.number} ${issue.type} issues`);
-    }
+    Object.entries(issuesCounters).forEach(([key, value]) => {
+        const severity = (0, issues_1.getSeverityForCounter)(key);
+        core.info(`${value} ${severity} issues`);
+    });
 };
-const displayResults = ({ issues, url }) => __awaiter(void 0, void 0, void 0, function* () {
+const displayResults = ({ state, url }) => __awaiter(void 0, void 0, void 0, function* () {
     core.setFailed(`Issues were found. See on ${url} `);
-    printDescriptionForIssues(issues);
+    printDescriptionForIssues(state);
     const options = getSarifOptions();
     try {
         if ((options === null || options === void 0 ? void 0 : options.codeScanningAlerts) && (options === null || options === void 0 ? void 0 : options.token)) {
@@ -240,7 +203,7 @@ const uploadSarif = (params) => __awaiter(void 0, void 0, void 0, function* () {
     }
     const sarif = Buffer.from(res.data).toString('base64');
     const githubRepository = process.env['GITHUB_REPOSITORY'];
-    if (githubRepository == null) {
+    if (!githubRepository) {
         throw new Error(`GITHUB_REPOSITORY environment variable must be set`);
     }
     const [owner, repo] = githubRepository.split('/');
@@ -271,8 +234,126 @@ const getSarifOptions = () => {
         commitSha
     };
 };
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-run(scanId);
+(0, async_poller_1.asyncPoll)(() => __awaiter(void 0, void 0, void 0, function* () {
+    const state = yield getScanStatus(scanId);
+    const satisfied = (0, issues_1.satisfyThreshold)(threshold, state);
+    const url = `${baseUrl}/scans/${scanId} `;
+    const result = {
+        done: true,
+        data: state.status
+    };
+    if (satisfied) {
+        yield displayResults({ state, url });
+        return result;
+    }
+    switch (state.status) {
+        case 'failed':
+        case 'disrupted':
+            core.setFailed(`Scan ${state.status}. See on ${url} `);
+            return result;
+        case 'stopped':
+            return result;
+        default:
+            result.done = false;
+            return result;
+    }
+}), interval, timeout).catch((e) => {
+    core.debug(e);
+    core.setFailed(e);
+});
+
+
+/***/ }),
+
+/***/ 5253:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.satisfyThreshold = exports.getSeverityForCounter = exports.getIssuesCounters = void 0;
+const severity_1 = __nccwpck_require__(2016);
+const counterFromSeverity = (severity) => `numberOf${severity}SeverityIssues`;
+const getIssuesCounters = (status, severitiesToFilter = severity_1.severities) => {
+    const fields = severitiesToFilter.map(counterFromSeverity);
+    const entries = Object.entries(status);
+    return Object.fromEntries(entries.filter((entry) => {
+        const [key] = entry;
+        return fields.includes(key);
+    }));
+};
+exports.getIssuesCounters = getIssuesCounters;
+const getSeverityForCounter = (key) => severity_1.severities.find(x => key === counterFromSeverity(x));
+exports.getSeverityForCounter = getSeverityForCounter;
+const satisfyThreshold = (severity, status) => {
+    const issuesCounters = (0, exports.getIssuesCounters)(status, severity_1.ranges.get(severity));
+    return Object.entries(issuesCounters).some(([, value = 0]) => value > 0);
+};
+exports.satisfyThreshold = satisfyThreshold;
+
+
+/***/ }),
+
+/***/ 2016:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ranges = exports.severities = exports.SeverityThreshold = exports.Severity = void 0;
+var Severity;
+(function (Severity) {
+    Severity["LOW"] = "Low";
+    Severity["MEDIUM"] = "Medium";
+    Severity["HIGH"] = "High";
+    Severity["CRITICAL"] = "Critical";
+})(Severity = exports.Severity || (exports.Severity = {}));
+var SeverityThreshold;
+(function (SeverityThreshold) {
+    SeverityThreshold["ANY"] = "any";
+    SeverityThreshold["MEDIUM"] = "medium";
+    SeverityThreshold["HIGH"] = "high";
+    SeverityThreshold["CRITICAL"] = "critical";
+})(SeverityThreshold = exports.SeverityThreshold || (exports.SeverityThreshold = {}));
+exports.severities = [...Object.values(Severity)];
+exports.ranges = new Map([
+    [SeverityThreshold.ANY, exports.severities],
+    [SeverityThreshold.MEDIUM, exports.severities.filter(x => x !== Severity.LOW)],
+    [SeverityThreshold.HIGH, [Severity.HIGH, Severity.CRITICAL]],
+    [SeverityThreshold.CRITICAL, [Severity.CRITICAL]]
+]);
+
+
+/***/ }),
+
+/***/ 1279:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getStatus = void 0;
+const axios_1 = __importDefault(__nccwpck_require__(6545));
+const getStatus = (uuid, options) => __awaiter(void 0, void 0, void 0, function* () {
+    const res = yield axios_1.default.get(`${options.baseUrl}/api/v1/scans/${uuid}`, {
+        headers: { authorization: `api-key ${options.token}` }
+    });
+    const { data } = res;
+    return data;
+});
+exports.getStatus = getStatus;
 
 
 /***/ }),
@@ -5310,13 +5391,13 @@ module.exports = setup;
 if (typeof process === 'undefined' || process.type === 'renderer' || process.browser === true || process.__nwjs) {
 	module.exports = __nccwpck_require__(8222);
 } else {
-	module.exports = __nccwpck_require__(4874);
+	module.exports = __nccwpck_require__(5332);
 }
 
 
 /***/ }),
 
-/***/ 4874:
+/***/ 5332:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 /**
@@ -6938,7 +7019,7 @@ var _v3 = _interopRequireDefault(__nccwpck_require__(5122));
 
 var _v4 = _interopRequireDefault(__nccwpck_require__(9120));
 
-var _nil = _interopRequireDefault(__nccwpck_require__(5332));
+var _nil = _interopRequireDefault(__nccwpck_require__(5350));
 
 var _version = _interopRequireDefault(__nccwpck_require__(1595));
 
@@ -6982,7 +7063,7 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 5332:
+/***/ 5350:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
