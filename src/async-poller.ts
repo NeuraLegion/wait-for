@@ -99,7 +99,7 @@ export async function asyncPoll<T>(
         } else if (now < endTime) {
           setTimeout(checkCondition, pollInterval, resolve, reject);
         } else {
-          reject(new Error('AsyncPoller: reached timeout'));
+          reject(new Error('The pooling timed out.'));
         }
       })
       .catch(err => {

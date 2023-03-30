@@ -14,7 +14,7 @@ inputs:
     description: 'Hostname. Default is app.neuralegion.com'
     required: false
   wait_for:
-    description: 'Wait for first issue: *any*, *medium*, *high*'
+    description: 'Wait for first issue: *any*, *medium*, *high*, *critical*'
     required: true
   timeout:
     description: 'Time in seconds for the action to wait for issues'
