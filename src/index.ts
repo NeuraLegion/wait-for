@@ -1,27 +1,23 @@
 import { AsyncData, asyncPoll } from './async-poller';
+import { SeverityThreshold } from './severity';
+import { Status, getStatus } from './status';
+import {
+  getIssuesCounters,
+  getSeverityForCounter,
+  satisfyThreshold,
+  IssuesCounter
+} from './issues';
 import * as core from '@actions/core';
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { pathToFileURL } from 'url';
 
-type Severity = 'any' | 'medium' | 'high';
-
-interface Status {
-  status: string;
-  issuesBySeverity: IssuesBySeverity[];
-}
-
-interface IssuesBySeverity {
-  number: number;
-  type: string;
-}
-
 const apiToken = core.getInput('api_token');
 const scanId = core.getInput('scan');
 const hostname = core.getInput('hostname');
-const waitFor = core
+const threshold = core
   .getInput('wait_for', { trimWhitespace: true })
-  .toLowerCase() as Severity;
+  .toLowerCase() as SeverityThreshold;
 
 const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
@@ -32,55 +28,12 @@ const baseUrl = (
 
 axiosRetry(axios, { retries: 3 });
 
-const run = (uuid: string) =>
-  asyncPoll(
-    async (): Promise<AsyncData<any>> => {
-      const status = await getStatus(uuid);
-      const { issuesBySeverity, status: data } = status;
-
-      const stop = issueFound(waitFor, issuesBySeverity);
-
-      const url = `${baseUrl}/scans/${uuid} `;
-      const result: AsyncData<any> = {
-        data,
-        done: true
-      };
-
-      if (stop) {
-        await displayResults({ issues: issuesBySeverity, url });
-
-        return result;
-      }
-
-      switch (data) {
-        case 'failed':
-          core.setFailed(`Scan failed. See on ${url} `);
-
-          return result;
-        case 'stopped':
-          return result;
-        default:
-          result.done = false;
-
-          return result;
-      }
-    },
-    interval,
-    timeout
-  ).catch(e => core.info(e));
-
-const getStatus = async (uuid: string): Promise<Status | never> => {
+const getScanStatus = async (uuid: string): Promise<Status | never> => {
   try {
-    const res = await axios.get<Status>(`${baseUrl}/api/v1/scans/${uuid}`, {
-      headers: { authorization: `api-key ${apiToken}` }
+    return await getStatus(uuid, {
+      baseUrl,
+      token: apiToken
     });
-
-    const { data } = res;
-
-    return {
-      status: data ? data.status : '',
-      issuesBySeverity: data ? data.issuesBySeverity : []
-    };
   } catch (err: any) {
     core.debug(err);
     const message = `Failed to retrieve the actual status.`;
@@ -89,41 +42,29 @@ const getStatus = async (uuid: string): Promise<Status | never> => {
   }
 };
 
-const issueFound = (
-  severity: Severity,
-  issues: IssuesBySeverity[]
-): boolean => {
-  let types: string[];
+const printDescriptionForIssues = (status: Status) => {
+  const issuesCounters = getIssuesCounters(status);
 
-  if (severity === 'any') {
-    types = ['Low', 'Medium', 'High'];
-  } else if (severity === 'medium') {
-    types = ['Medium', 'High'];
-  } else {
-    types = ['High'];
-  }
-
-  return issues.some(issue => issue.number > 0 && types.includes(issue.type));
-};
-
-const printDescriptionForIssues = (issues: IssuesBySeverity[]) => {
   core.info('Issues were found:');
 
-  for (const issue of issues) {
-    core.info(`${issue.number} ${issue.type} issues`);
-  }
+  Object.entries(issuesCounters).forEach(
+    ([key, value]: [string, number | undefined]) => {
+      const severity = getSeverityForCounter(key as IssuesCounter);
+      core.info(`${value} ${severity} issues`);
+    }
+  );
 };
 
 const displayResults = async ({
-  issues,
+  state,
   url
 }: {
-  issues: IssuesBySeverity[];
+  state: Status;
   url: string;
 }) => {
   core.setFailed(`Issues were found. See on ${url} `);
 
-  printDescriptionForIssues(issues);
+  printDescriptionForIssues(state);
 
   const options = getSarifOptions();
 
@@ -162,7 +103,7 @@ const uploadSarif = async (params: {
 
   const githubRepository = process.env['GITHUB_REPOSITORY'];
 
-  if (githubRepository == null) {
+  if (!githubRepository) {
     throw new Error(`GITHUB_REPOSITORY environment variable must be set`);
   }
 
@@ -207,5 +148,41 @@ const getSarifOptions: () => {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-run(scanId);
+asyncPoll(
+  async (): Promise<AsyncData<any>> => {
+    const state = await getScanStatus(scanId);
+
+    const satisfied = satisfyThreshold(threshold, state);
+
+    const url = `${baseUrl}/scans/${scanId} `;
+    const result: AsyncData<string> = {
+      done: true,
+      data: state.status
+    };
+
+    if (satisfied) {
+      await displayResults({ state, url });
+
+      return result;
+    }
+
+    switch (state.status) {
+      case 'failed':
+      case 'disrupted':
+        core.setFailed(`Scan ${state.status}. See on ${url} `);
+
+        return result;
+      case 'stopped':
+        return result;
+      default:
+        result.done = false;
+
+        return result;
+    }
+  },
+  interval,
+  timeout
+).catch((e: any) => {
+  core.debug(e);
+  core.setFailed(e);
+});
