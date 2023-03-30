@@ -1,6 +1,6 @@
 import { AsyncData, asyncPoll } from './async-poller';
 import { SeverityThreshold } from './severity';
-import { Status, getStatus } from './status';
+import { Scan, getStatus, stopScan } from './scan';
 import {
   getIssuesCounters,
   getSeverityForCounter,
@@ -12,12 +12,11 @@ import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { pathToFileURL } from 'url';
 
-const apiToken = core.getInput('api_token');
-const scanId = core.getInput('scan');
+const token = core.getInput('api_token', { required: true });
+const scanId = core.getInput('scan', { required: true });
 const hostname = core.getInput('hostname');
-const threshold = core
-  .getInput('wait_for', { trimWhitespace: true })
-  .toLowerCase() as SeverityThreshold;
+const shouldStopScan = core.getBooleanInput('stop_scan');
+const threshold = core.getInput('wait_for').toLowerCase() as SeverityThreshold;
 
 const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
@@ -28,11 +27,11 @@ const baseUrl = (
 
 axiosRetry(axios, { retries: 3 });
 
-const getScanStatus = async (uuid: string): Promise<Status | never> => {
+const getScanStatus = async (uuid: string): Promise<Scan | never> => {
   try {
     return await getStatus(uuid, {
       baseUrl,
-      token: apiToken
+      token
     });
   } catch (err: any) {
     core.debug(err);
@@ -42,7 +41,7 @@ const getScanStatus = async (uuid: string): Promise<Status | never> => {
   }
 };
 
-const printDescriptionForIssues = (status: Status) => {
+const printDescriptionForIssues = (status: Scan) => {
   const issuesCounters = getIssuesCounters(status);
 
   core.info('Issues were found:');
@@ -55,13 +54,7 @@ const printDescriptionForIssues = (status: Status) => {
   );
 };
 
-const displayResults = async ({
-  state,
-  url
-}: {
-  state: Status;
-  url: string;
-}) => {
+const displayResults = async ({ state, url }: { state: Scan; url: string }) => {
   core.setFailed(`Issues were found. See on ${url} `);
 
   printDescriptionForIssues(state);
@@ -89,7 +82,7 @@ const uploadSarif = async (params: {
     `${baseUrl}/api/v1/scans/${params.scanId}/reports/sarif`,
     {
       responseType: 'arraybuffer',
-      headers: { authorization: `api-key ${apiToken}` }
+      headers: { authorization: `api-key ${token}` }
     }
   );
 
@@ -138,13 +131,13 @@ const getSarifOptions: () => {
   const codeScanningAlerts = core.getBooleanInput('code_scanning_alerts');
   const ref = core.getInput('ref') ?? process.env.GITHUB_REF;
   const commitSha = core.getInput('commit_sha') ?? process.env.GITHUB_SHA;
-  const token = core.getInput('github_token') ?? process.env.GITHUB_TOKEN;
+  const githubToken = core.getInput('github_token') ?? process.env.GITHUB_TOKEN;
 
   return {
-    token,
     codeScanningAlerts,
     ref,
-    commitSha
+    commitSha,
+    token: githubToken
   };
 };
 
@@ -163,6 +156,13 @@ asyncPoll(
     if (satisfied) {
       await displayResults({ state, url });
 
+      if (shouldStopScan) {
+        await stopScan(scanId, {
+          baseUrl,
+          token
+        });
+      }
+
       return result;
     }
 
@@ -173,6 +173,7 @@ asyncPoll(
 
         return result;
       case 'stopped':
+      case 'done':
         return result;
       default:
         result.done = false;
@@ -182,7 +183,11 @@ asyncPoll(
   },
   interval,
   timeout
-).catch((e: any) => {
+).catch(async (e: any) => {
+  await stopScan(scanId, {
+    baseUrl,
+    token
+  });
   core.debug(e);
   core.setFailed(e);
 });

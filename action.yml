@@ -16,6 +16,10 @@ inputs:
   wait_for:
     description: 'Wait for first issue: *any*, *medium*, *high*, *critical*'
     required: true
+  stop_scan:
+    description: 'If `true`, allows you to stop a scan after the action has completed.'
+    default: false
+    required: false
   timeout:
     description: 'Time in seconds for the action to wait for issues'
     required: false

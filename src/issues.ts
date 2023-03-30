@@ -1,7 +1,7 @@
 import { ranges, severities, Severity, SeverityThreshold } from './severity';
-import { Status } from './status';
+import { Scan } from './scan';
 
-type StatusEntry = [keyof Status, Status[keyof Status]];
+type StatusEntry = [keyof Scan, Scan[keyof Scan]];
 
 export type IssuesCounter = `numberOf${Severity}SeverityIssues`;
 export type IssuesCounters = Record<IssuesCounter, number | undefined>;
@@ -10,7 +10,7 @@ const counterFromSeverity = (severity: Severity): IssuesCounter =>
   `numberOf${severity}SeverityIssues`;
 
 export const getIssuesCounters = (
-  status: Status,
+  status: Scan,
   severitiesToFilter: readonly Severity[] = severities
 ): IssuesCounters => {
   const fields = severitiesToFilter.map<string>(counterFromSeverity);
@@ -31,7 +31,7 @@ export const getSeverityForCounter = (
 
 export const satisfyThreshold = (
   severity: SeverityThreshold,
-  status: Status
+  status: Scan
 ): boolean => {
   const issuesCounters = getIssuesCounters(status, ranges.get(severity));
 
