@@ -108,6 +108,7 @@ const uploadSarif = async (params: {
     `https://api.github.com/repos/${owner}/${repo}/code-scanning/sarifs`,
     {
       sarif,
+      validate: true,
       ref: params.ref,
       commit_sha: params.commitSha,
       tool_name: 'NeuraLegion’s DAST',
