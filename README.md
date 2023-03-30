@@ -64,6 +64,12 @@ _Example:_ `wait_for: any`
 
 _Example:_ ` timeout: 55`
 
+### `stop_scan`
+
+If set to `true`, allows you to stop a scan after the action has completed.
+
+_Example:_ `stop_scan: true`
+
 ### `code_scanning_alerts`
 
 If set to `true`, uploads SARIF scan data to GitHub so that scan results are available from Code Scanning.

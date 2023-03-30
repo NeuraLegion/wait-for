@@ -141,27 +141,26 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const async_poller_1 = __nccwpck_require__(8549);
-const status_1 = __nccwpck_require__(1279);
+const scan_1 = __nccwpck_require__(5702);
 const issues_1 = __nccwpck_require__(5253);
 const core = __importStar(__nccwpck_require__(2186));
 const axios_1 = __importDefault(__nccwpck_require__(6545));
 const axios_retry_1 = __importDefault(__nccwpck_require__(9179));
 const url_1 = __nccwpck_require__(7310);
-const apiToken = core.getInput('api_token');
-const scanId = core.getInput('scan');
+const token = core.getInput('api_token', { required: true });
+const scanId = core.getInput('scan', { required: true });
 const hostname = core.getInput('hostname');
-const threshold = core
-    .getInput('wait_for', { trimWhitespace: true })
-    .toLowerCase();
+const shouldStopScan = core.getBooleanInput('stop_scan');
+const threshold = core.getInput('wait_for').toLowerCase();
 const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
 const baseUrl = (hostname ? `https://${hostname}` : 'https://app.neuralegion.com').replace(/\/$/, '');
 (0, axios_retry_1.default)(axios_1.default, { retries: 3 });
 const getScanStatus = (uuid) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        return yield (0, status_1.getStatus)(uuid, {
+        return yield (0, scan_1.getStatus)(uuid, {
             baseUrl,
-            token: apiToken
+            token
         });
     }
     catch (err) {
@@ -196,7 +195,7 @@ const displayResults = ({ state, url }) => __awaiter(void 0, void 0, void 0, fun
 const uploadSarif = (params) => __awaiter(void 0, void 0, void 0, function* () {
     const res = yield axios_1.default.get(`${baseUrl}/api/v1/scans/${params.scanId}/reports/sarif`, {
         responseType: 'arraybuffer',
-        headers: { authorization: `api-key ${apiToken}` }
+        headers: { authorization: `api-key ${token}` }
     });
     if (!res.data) {
         throw new Error('Cannot upload a report to GitHub. SARIF report are empty.');
@@ -226,12 +225,12 @@ const getSarifOptions = () => {
     const codeScanningAlerts = core.getBooleanInput('code_scanning_alerts');
     const ref = (_a = core.getInput('ref')) !== null && _a !== void 0 ? _a : process.env.GITHUB_REF;
     const commitSha = (_b = core.getInput('commit_sha')) !== null && _b !== void 0 ? _b : process.env.GITHUB_SHA;
-    const token = (_c = core.getInput('github_token')) !== null && _c !== void 0 ? _c : process.env.GITHUB_TOKEN;
+    const githubToken = (_c = core.getInput('github_token')) !== null && _c !== void 0 ? _c : process.env.GITHUB_TOKEN;
     return {
-        token,
         codeScanningAlerts,
         ref,
-        commitSha
+        commitSha,
+        token: githubToken
     };
 };
 (0, async_poller_1.asyncPoll)(() => __awaiter(void 0, void 0, void 0, function* () {
@@ -244,6 +243,12 @@ const getSarifOptions = () => {
     };
     if (satisfied) {
         yield displayResults({ state, url });
+        if (shouldStopScan) {
+            yield (0, scan_1.stopScan)(scanId, {
+                baseUrl,
+                token
+            });
+        }
         return result;
     }
     switch (state.status) {
@@ -252,15 +257,20 @@ const getSarifOptions = () => {
             core.setFailed(`Scan ${state.status}. See on ${url} `);
             return result;
         case 'stopped':
+        case 'done':
             return result;
         default:
             result.done = false;
             return result;
     }
-}), interval, timeout).catch((e) => {
+}), interval, timeout).catch((e) => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, scan_1.stopScan)(scanId, {
+        baseUrl,
+        token
+    });
     core.debug(e);
     core.setFailed(e);
-});
+}));
 
 
 /***/ }),
@@ -294,6 +304,49 @@ exports.satisfyThreshold = satisfyThreshold;
 
 /***/ }),
 
+/***/ 5702:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.stopScan = exports.getStatus = void 0;
+const axios_1 = __importDefault(__nccwpck_require__(6545));
+const getStatus = (uuid, options) => __awaiter(void 0, void 0, void 0, function* () {
+    const res = yield axios_1.default.get(`${options.baseUrl}/api/v1/scans/${uuid}`, {
+        headers: { authorization: `api-key ${options.token}` }
+    });
+    const { data } = res;
+    return data;
+});
+exports.getStatus = getStatus;
+const stopScan = (uuid, options) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield axios_1.default.get(`${options.baseUrl}/api/v1/scans/${uuid}/stop`, {
+            headers: { authorization: `api-key ${options.token}` }
+        });
+    }
+    catch (_a) {
+        // noop
+    }
+});
+exports.stopScan = stopScan;
+
+
+/***/ }),
+
 /***/ 2016:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -322,38 +375,6 @@ exports.ranges = new Map([
     [SeverityThreshold.HIGH, [Severity.HIGH, Severity.CRITICAL]],
     [SeverityThreshold.CRITICAL, [Severity.CRITICAL]]
 ]);
-
-
-/***/ }),
-
-/***/ 1279:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getStatus = void 0;
-const axios_1 = __importDefault(__nccwpck_require__(6545));
-const getStatus = (uuid, options) => __awaiter(void 0, void 0, void 0, function* () {
-    const res = yield axios_1.default.get(`${options.baseUrl}/api/v1/scans/${uuid}`, {
-        headers: { authorization: `api-key ${options.token}` }
-    });
-    const { data } = res;
-    return data;
-});
-exports.getStatus = getStatus;
 
 
 /***/ }),
