@@ -209,6 +209,7 @@ const uploadSarif = (params) => __awaiter(void 0, void 0, void 0, function* () {
     core.info('Uploading SARIF results to GitHub.');
     yield axios_1.default.post(`https://api.github.com/repos/${owner}/${repo}/code-scanning/sarifs`, {
         sarif,
+        validate: true,
         ref: params.ref,
         commit_sha: params.commitSha,
         tool_name: 'NeuraLegion’s DAST',
