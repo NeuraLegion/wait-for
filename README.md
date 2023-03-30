@@ -32,10 +32,11 @@ Stop chasing ghosts and wasting time. Bright doesn’t return false positives, s
 Bright tests for all common vulnerabilities, such as SQL injection, CSRF, XSS, and XXE -- as well as uncommon vulnerabilities, such as business logic vulnerabilities.
 
 More information is available on Bright’s:
-* [Website](https://www.brightsec.com/)
-* [Knowledge base](https://docs.brightsec.com/docs/quickstart)
-* [YouTube channel](https://www.youtube.com/channel/UCoIC0T1pmozq3eKLsUR2uUw)
-* [GitHub Actions](https://github.com/marketplace?query=neuralegion+)
+
+- [Website](https://www.brightsec.com/)
+- [Knowledge base](https://docs.brightsec.com/docs/quickstart)
+- [YouTube channel](https://www.youtube.com/channel/UCoIC0T1pmozq3eKLsUR2uUw)
+- [GitHub Actions](https://github.com/marketplace?query=neuralegion+)
 
 # Inputs
 
@@ -53,7 +54,7 @@ _Example:_ `scan: ${{ steps.start.outputs.id }}`
 
 ### `wait_for`
 
-**Required**. Set the severity of the first issue to wait for: *any*, *medium*, *high*.
+**Required**. Set the severity of the first issue to wait for: _any_, _medium_, _high_.
 
 _Example:_ `wait_for: any`
 
@@ -61,14 +62,18 @@ _Example:_ `wait_for: any`
 
 **Required**. Time for polling in seconds.
 
-_Example:_  ` timeout: 55`
+_Example:_ ` timeout: 55`
 
 ### `code_scanning_alerts`
 
 If set to `true`, uploads SARIF scan data to GitHub so that scan results are available from Code Scanning.
 Requires to be set `github_token`.
 
-_Example:_  `code_scanning_alerts: true`
+_Example:_ `code_scanning_alerts: true`
+
+> To use code scanning in private and internal repositories, you need to enable [GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) features for the repository.
+>
+> You can find more details on how to manage your repository's security and analysis settings in the [Managing security and analysis settings for your repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-security-and-analysis-settings-for-your-repository) documentation.
 
 ## Outputs
 
@@ -85,30 +90,30 @@ start_and_wait_scan:
   runs-on: ubuntu-latest
   name: A job to run a NeuraLegion scan
   steps:
-  - name: Start NeuraLegion Scan 🏁
-    id: start
-    uses: NeuraLegion/run-scan@master
-    with:
-      api_token: ${{ secrets.NEURALEGION_TOKEN }}
-      name: GitHub scan ${{ github.sha }}
-      discovery_types: |
-        [ "crawler", "archive" ]
-      crawler_urls: |
-        [ "https://juice-shop.herokuapp.com" ]
-      file_id: LiYknMYSdbSZbqgMaC9Sj
-      hosts_filter: |
-        [ ]
-      wait_for: high
-  - name: Get the output scan url
-    run: echo "The scan was started on ${{ steps.start.outputs.url }}"
-  - name: Wait for any issues ⏳
-    id: wait
-    uses: NeuraLegion/wait-for@master
-    with:
-      api_token: ${{ secrets.NEURALEGION_TOKEN }}
-      scan: ${{ steps.start.outputs.id }}
-      wait_for: any
-      timeout: 55
-      code_scanning_alerts: true
-      github_token: ${{ github.token }}
+    - name: Start NeuraLegion Scan 🏁
+      id: start
+      uses: NeuraLegion/run-scan@master
+      with:
+        api_token: ${{ secrets.NEURALEGION_TOKEN }}
+        name: GitHub scan ${{ github.sha }}
+        discovery_types: |
+          [ "crawler", "archive" ]
+        crawler_urls: |
+          [ "https://juice-shop.herokuapp.com" ]
+        file_id: LiYknMYSdbSZbqgMaC9Sj
+        hosts_filter: |
+          [ ]
+        wait_for: high
+    - name: Get the output scan url
+      run: echo "The scan was started on ${{ steps.start.outputs.url }}"
+    - name: Wait for any issues ⏳
+      id: wait
+      uses: NeuraLegion/wait-for@master
+      with:
+        api_token: ${{ secrets.NEURALEGION_TOKEN }}
+        scan: ${{ steps.start.outputs.id }}
+        wait_for: any
+        timeout: 55
+        code_scanning_alerts: true
+        github_token: ${{ github.token }}
 ```
