@@ -154,7 +154,7 @@ const shouldStopScan = core.getBooleanInput('stop_scan');
 const threshold = core.getInput('wait_for').toLowerCase();
 const interval = 20000;
 const timeout = 1000 * Number(core.getInput('timeout'));
-const baseUrl = (hostname ? `https://${hostname}` : 'https://app.neuralegion.com').replace(/\/$/, '');
+const baseUrl = (hostname ? `https://${hostname}` : 'https://app.brightsec.com').replace(/\/$/, '');
 (0, axios_retry_1.default)(axios_1.default, { retries: 3 });
 const getScanStatus = (uuid) => __awaiter(void 0, void 0, void 0, function* () {
     try {
